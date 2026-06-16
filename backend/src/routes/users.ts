@@ -13,6 +13,24 @@ users.get('/me', async (c) => {
   return c.json(profile)
 })
 
+users.post('/me', async (c) => {
+  const userId = c.get('userId')
+  const { username, display_name } = await c.req.json() as { username: string; display_name: string }
+  if (!username || !display_name) {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'username と display_name は必須です' } }, 400)
+  }
+  const [existing] = await sql`SELECT id FROM profiles WHERE id = ${userId}`
+  if (existing) {
+    return c.json({ error: { code: 'CONFLICT', message: 'プロフィールは既に存在します' } }, 409)
+  }
+  const [created] = await sql`
+    INSERT INTO profiles (id, username, display_name)
+    VALUES (${userId}, ${username}, ${display_name})
+    RETURNING *
+  `
+  return c.json(created, 201)
+})
+
 users.put('/me', async (c) => {
   const userId = c.get('userId')
   const { username, display_name, avatar_url } = await c.req.json()
