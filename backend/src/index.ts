@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
+import { cors } from 'hono/cors'
 import { genres } from './routes/genres.js'
 import { users } from './routes/users.js'
 import { follows } from './routes/follows.js'
@@ -7,6 +8,8 @@ import { restaurants } from './routes/restaurants.js'
 import { reviews } from './routes/reviews.js'
 
 const app = new Hono()
+
+app.use('*', cors({ origin: ['http://localhost:5173'], allowHeaders: ['Authorization', 'Content-Type'] }))
 
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
