@@ -191,11 +191,70 @@ ORDER BY table_name;
 
 ---
 
+---
+
+## 5. 起動コマンド
+
+### 前提：`.env` ファイルの準備
+
+ルートに `.env`、フロントエンドに `frontend/.env` が必要。`.env.example` をコピーして実際の値を設定する。
+
+```bash
+cp .env.example .env
+cp frontend/.env.example frontend/.env
+# 各ファイルに実際のAPIキーを記入
+```
+
+---
+
+### バックエンド起動（Docker）
+
+ルートディレクトリで実行：
+
+```bash
+# 通常起動（2回目以降）
+docker compose up
+
+# ソースを変更した場合
+docker compose up --build
+
+# DBボリュームを含め完全にリセットして起動（テーブル再作成が必要な場合）
+docker compose down -v && docker compose up --build
+```
+
+起動確認：[http://localhost:3000/health](http://localhost:3000/health) → `{"status":"ok"}` が返れば正常。
+
+> **注意：** ポート5432がmacOSのPostgreSQLと競合する場合は `docker-compose.yml` の db ポートを `5433:5432` にしてある。
+
+---
+
+### フロントエンド起動
+
+```bash
+cd frontend
+npm run dev
+```
+
+ブラウザで [http://localhost:5173](http://localhost:5173) を開く。
+
+---
+
+### 同時起動の流れ
+
+1. ターミナル①：`docker compose up`（バックエンド + DB）
+2. ターミナル②：`cd frontend && npm run dev`（フロントエンド）
+3. バックエンドの healthcheck が通ってから frontend を操作する
+
+---
+
 ## 完了状況
 
 - ✅ ホットペッパーAPIキー取得・`.env` 設定
 - ✅ Supabase プロジェクト作成・APIキー取得・`.env` 設定
 - ✅ DBテーブル作成（6テーブル + インデックス + genresマスタ）
-- ⬜ Docker起動確認
+- ✅ Docker起動確認
+- ✅ バックエンド全エンドポイント実装（15本）
+- ✅ フロントエンド全画面実装（ログイン・マップ・フィード・フォロー・プロフィール・オンボーディング）
+- ⬜ レビュー投稿UI
 - ⬜ RLS設定
-- ⬜ バックエンド実装
+- ⬜ デプロイ（Vercel + Render/Railway）

@@ -35,13 +35,12 @@ CREATE TABLE follow_requests (
 
 CREATE TABLE restaurants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  hotpepper_id VARCHAR(50) UNIQUE NOT NULL,
+  place_id VARCHAR(255) UNIQUE NOT NULL,
   name VARCHAR(200) NOT NULL,
   address TEXT,
   lat DECIMAL(9,6),
   lng DECIMAL(9,6),
   genre VARCHAR(100),
-  hotpepper_url TEXT,
   photo_url TEXT,
   cached_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -14,13 +14,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         navigate('/login')
         return
       }
-      const token = data.session.access_token
-      const res = await fetch(`${API_BASE}/api/v1/users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (res.status === 404) {
-        navigate('/onboarding')
-        return
+      try {
+        const token = data.session.access_token
+        const res = await fetch(`${API_BASE}/api/v1/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.status === 404) {
+          navigate('/onboarding')
+          return
+        }
+      } catch {
+        // バックエンド未起動など。そのまま画面を表示する
       }
       setChecking(false)
     })

@@ -12,7 +12,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/gochispace
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
-      HOTPEPPER_API_KEY: ${HOTPEPPER_API_KEY}
+      GOCHI_SPACE_API_KEY: ${GOCHI_SPACE_API_KEY}
     volumes:
       - ./backend:/app
       - /app/node_modules

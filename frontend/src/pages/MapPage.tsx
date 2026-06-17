@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import { Box, Typography } from '@mui/material'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { supabase } from '../supabase'
 
-// Leafletのデフォルトアイコン修正
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, shadowUrl: markerShadow })
 
 type MapReview = {
@@ -17,8 +17,14 @@ type MapReview = {
   display_name: string
   restaurant_id: string
   restaurant_name: string
-  lat: number
-  lng: number
+  lat: number | string
+  lng: number | string
+}
+
+const RATING_LABEL: Record<string, string> = {
+  want_to_revisit: 'また行きたい',
+  average: '普通',
+  not_good: '好みじゃなかった',
 }
 
 const apiBase = import.meta.env.VITE_API_BASE_URL as string
@@ -26,17 +32,20 @@ const apiBase = import.meta.env.VITE_API_BASE_URL as string
 export default function MapPage() {
   const [reviews, setReviews] = useState<MapReview[]>([])
 
-  useEffect(() => {
-    const fetchReviews = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch(`${apiBase}/api/v1/reviews/map`, {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-      })
-      const data = await res.json()
-      setReviews(Array.isArray(data) ? data : [])
-    }
-    fetchReviews()
+  const fetchReviews = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`${apiBase}/api/v1/reviews/map`, {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
+    const data = await res.json()
+    setReviews(Array.isArray(data) ? data : [])
   }, [])
+
+  useEffect(() => {
+    fetchReviews()
+    window.addEventListener('review-posted', fetchReviews)
+    return () => window.removeEventListener('review-posted', fetchReviews)
+  }, [fetchReviews])
 
   return (
     <Box sx={{ height: 'calc(100vh - 56px)' }}>
@@ -46,11 +55,11 @@ export default function MapPage() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {reviews.map((r) => (
-          <Marker key={r.id} position={[r.lat, r.lng]}>
+          <Marker key={r.id} position={[Number(r.lat), Number(r.lng)]}>
             <Popup>
-              <Typography variant="subtitle2">{r.restaurant_name}</Typography>
+              <Typography variant="subtitle2" fontWeight="bold">{r.restaurant_name}</Typography>
               <Typography variant="body2">{r.display_name}</Typography>
-              <Typography variant="body2">{r.rating}</Typography>
+              <Typography variant="body2">{RATING_LABEL[r.rating] ?? r.rating}</Typography>
             </Popup>
           </Marker>
         ))}
