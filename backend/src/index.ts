@@ -9,7 +9,11 @@ import { reviews } from './routes/reviews.js'
 
 const app = new Hono()
 
-app.use('*', cors({ origin: ['http://localhost:5173'], allowHeaders: ['Authorization', 'Content-Type'] }))
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173']
+
+app.use('*', cors({ origin: allowedOrigins, allowHeaders: ['Authorization', 'Content-Type'] }))
 
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
@@ -19,4 +23,5 @@ app.route('/api/v1/follows', follows)
 app.route('/api/v1/restaurants', restaurants)
 app.route('/api/v1/reviews', reviews)
 
-serve({ fetch: app.fetch, port: 3000 })
+const port = Number(process.env.PORT) || 3000
+serve({ fetch: app.fetch, port })
