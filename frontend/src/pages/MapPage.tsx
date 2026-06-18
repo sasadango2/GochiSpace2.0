@@ -57,7 +57,7 @@ export default function MapPage() {
         {reviews.map((r) => (
           <Marker key={r.id} position={[Number(r.lat), Number(r.lng)]}>
             <Popup>
-              <Typography variant="subtitle2" fontWeight="bold">{r.restaurant_name}</Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{r.restaurant_name}</Typography>
               <Typography variant="body2">{r.display_name}</Typography>
               <Typography variant="body2">{RATING_LABEL[r.rating] ?? r.rating}</Typography>
             </Popup>

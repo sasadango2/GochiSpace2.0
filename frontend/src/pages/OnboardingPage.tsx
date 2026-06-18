@@ -41,7 +41,7 @@ export default function OnboardingPage() {
   return (
     <Container maxWidth="sm">
       <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <Typography variant="h5" fontWeight="bold">プロフィール設定</Typography>
+        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>プロフィール設定</Typography>
         <Typography variant="body2" color="text.secondary">
           GochiSpace へようこそ！はじめにプロフィールを設定してください。
         </Typography>
