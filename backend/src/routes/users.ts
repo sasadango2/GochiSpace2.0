@@ -1,8 +1,9 @@
 import { Hono } from 'hono'
 import { sql } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
+import type { AppEnv } from '../types.js'
 
-const users = new Hono()
+const users = new Hono<AppEnv>()
 
 users.use('*', authMiddleware)
 
