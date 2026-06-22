@@ -5,6 +5,7 @@ import {
   ToggleButtonGroup, ToggleButton, Typography, Box, CircularProgress,
 } from '@mui/material'
 import { supabase } from '../supabase'
+import { SITUATIONS } from '../constants'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
 
@@ -40,6 +41,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
   const [results, setResults] = useState<Restaurant[]>([])
   const [selected, setSelected] = useState<Restaurant | null>(null)
   const [rating, setRating] = useState<RatingType | null>(null)
+  const [situation, setSituation] = useState<string | null>(null)
   const [comment, setComment] = useState('')
   const [visitedAt, setVisitedAt] = useState('')
   const [searching, setSearching] = useState(false)
@@ -72,6 +74,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
       body: JSON.stringify({
         restaurantId: selected.id,
         rating,
+        situation: situation || undefined,
         comment: comment || undefined,
         visitedAt: visitedAt || undefined,
       }),
@@ -87,6 +90,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
     setResults([])
     setSelected(null)
     setRating(null)
+    setSituation(null)
     setComment('')
     setVisitedAt('')
     onClose()
@@ -146,6 +150,19 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
                   <ToggleButton key={r.value} value={r.value} size="small">
                     {r.label}
                   </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Box>
+            <Box>
+              <Typography variant="body2" sx={{ mb: 1 }}>シチュエーション（任意）</Typography>
+              <ToggleButtonGroup
+                value={situation}
+                exclusive
+                onChange={(_, v: string | null) => setSituation(v)}
+                sx={{ flexWrap: 'wrap', gap: 0.5 }}
+              >
+                {SITUATIONS.map((s) => (
+                  <ToggleButton key={s} value={s} size="small">{s}</ToggleButton>
                 ))}
               </ToggleButtonGroup>
             </Box>

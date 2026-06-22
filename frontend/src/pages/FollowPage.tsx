@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Box, Typography, TextField, Button, List, ListItem, ListItemText, Chip, Divider } from '@mui/material'
+import {
+  Box, Typography, TextField, Button, List, ListItem, ListItemText,
+  Divider, Select, MenuItem, FormControl,
+} from '@mui/material'
 import { supabase } from '../supabase'
+import { ROLES } from '../constants'
 
-type User = { id: string; username: string; display_name: string }
+type Follow = { id: string; username: string; display_name: string; follow_id: string; role: string | null }
 type Request = { id: string; username: string; display_name: string; status: string }
 
 const apiBase = import.meta.env.VITE_API_BASE_URL as string
@@ -14,15 +18,14 @@ async function getToken() {
 
 export default function FollowPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<User[]>([])
-  const [followers, setFollowers] = useState<User[]>([])
+  const [searchResults, setSearchResults] = useState<Follow[]>([])
+  const [followers, setFollowers] = useState<Follow[]>([])
   const [received, setReceived] = useState<Request[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
       const token = await getToken()
       const headers = { Authorization: `Bearer ${token}` }
-
       const [followersRes, receivedRes] = await Promise.all([
         fetch(`${apiBase}/api/v1/follows`, { headers }),
         fetch(`${apiBase}/api/v1/follows/requests/received`, { headers }),
@@ -48,6 +51,8 @@ export default function FollowPage() {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ toUserId }),
     })
+    setSearchResults([])
+    setSearchQuery('')
   }
 
   const respondRequest = async (id: string, status: 'accepted' | 'rejected') => {
@@ -60,16 +65,28 @@ export default function FollowPage() {
     setReceived((prev) => prev.filter((r) => r.id !== id))
   }
 
+  const updateRole = async (followId: string, role: string | null) => {
+    const token = await getToken()
+    await fetch(`${apiBase}/api/v1/follows/${followId}/role`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    })
+    setFollowers((prev) => prev.map((f) => f.follow_id === followId ? { ...f, role } : f))
+  }
+
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', px: 2, pt: 2 }}>
+    <Box sx={{ maxWidth: 600, mx: 'auto', px: 2, pt: 2, pb: 10 }}>
       <Typography variant="h6" sx={{ mb: 2 }}>フォロー管理</Typography>
 
       <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
         <TextField
           label="ユーザー名で検索"
           fullWidth
+          size="small"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
         />
         <Button variant="contained" onClick={handleSearch}>検索</Button>
       </Box>
@@ -78,7 +95,7 @@ export default function FollowPage() {
         <List sx={{ mb: 3 }}>
           {searchResults.map((u) => (
             <ListItem key={u.id} secondaryAction={
-              <Button size="small" onClick={() => sendRequest(u.id)}>申請</Button>
+              <Button size="small" variant="outlined" onClick={() => sendRequest(u.id)}>申請</Button>
             }>
               <ListItemText primary={u.display_name} secondary={`@${u.username}`} />
             </ListItem>
@@ -86,28 +103,46 @@ export default function FollowPage() {
         </List>
       )}
 
+      {received.length > 0 && (
+        <>
+          <Divider sx={{ mb: 2 }} />
+          <Typography variant="subtitle1" sx={{ mb: 1 }}>受信した申請（{received.length}件）</Typography>
+          <List sx={{ mb: 3 }}>
+            {received.map((r) => (
+              <ListItem key={r.id} secondaryAction={
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button size="small" color="success" variant="contained" onClick={() => respondRequest(r.id, 'accepted')}>承認</Button>
+                  <Button size="small" color="error" onClick={() => respondRequest(r.id, 'rejected')}>拒否</Button>
+                </Box>
+              }>
+                <ListItemText primary={r.display_name} secondary={`@${r.username}`} />
+              </ListItem>
+            ))}
+          </List>
+        </>
+      )}
+
       <Divider sx={{ mb: 2 }} />
-      <Typography variant="subtitle1" sx={{ mb: 1 }}>受信した申請</Typography>
-      {received.length === 0 && <Typography color="text.secondary" sx={{ mb: 2 }}>申請はありません</Typography>}
-      <List sx={{ mb: 3 }}>
-        {received.map((r) => (
-          <ListItem key={r.id} secondaryAction={
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button size="small" color="success" onClick={() => respondRequest(r.id, 'accepted')}>承認</Button>
-              <Button size="small" color="error" onClick={() => respondRequest(r.id, 'rejected')}>拒否</Button>
-            </Box>
+      <Typography variant="subtitle1" sx={{ mb: 1 }}>相互フォロー中</Typography>
+      {followers.length === 0 && <Typography color="text.secondary">フォロワーはいません</Typography>}
+      <List>
+        {followers.map((f) => (
+          <ListItem key={f.id} secondaryAction={
+            <FormControl size="small" sx={{ minWidth: 110 }}>
+              <Select
+                value={f.role ?? ''}
+                displayEmpty
+                onChange={(e) => updateRole(f.follow_id, e.target.value || null)}
+              >
+                <MenuItem value=""><em>ロールなし</em></MenuItem>
+                {ROLES.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+              </Select>
+            </FormControl>
           }>
-            <ListItemText primary={r.display_name} secondary={`@${r.username}`} />
+            <ListItemText primary={f.display_name} secondary={`@${f.username}`} />
           </ListItem>
         ))}
       </List>
-
-      <Divider sx={{ mb: 2 }} />
-      <Typography variant="subtitle1" sx={{ mb: 1 }}>相互フォロワー</Typography>
-      {followers.length === 0 && <Typography color="text.secondary">フォロワーはいません</Typography>}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-        {followers.map((f) => <Chip key={f.id} label={f.display_name} />)}
-      </Box>
     </Box>
   )
 }

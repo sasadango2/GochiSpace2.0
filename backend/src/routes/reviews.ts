@@ -7,26 +7,43 @@ const reviews = new Hono<AppEnv>()
 
 reviews.use('*', authMiddleware)
 
-const mutualFollowCondition = (userId: string) => sql`
-  (
+const buildFollowCondition = (userId: string, roleFilter: string | null) => {
+  if (roleFilter) {
+    return sql`(
+      SELECT COUNT(*) FROM follow_requests
+      WHERE status = 'accepted'
+        AND role = ${roleFilter}
+        AND (
+          (from_user_id = ${userId} AND to_user_id = r.user_id) OR
+          (to_user_id = ${userId} AND from_user_id = r.user_id)
+        )
+    ) > 0`
+  }
+  return sql`(
     SELECT COUNT(*) FROM follow_requests
     WHERE status = 'accepted'
       AND (
         (from_user_id = ${userId} AND to_user_id = r.user_id) OR
         (to_user_id = ${userId} AND from_user_id = r.user_id)
       )
-  ) > 0
-`
+  ) > 0`
+}
 
 reviews.get('/', async (c) => {
   const userId = c.get('userId')
+  const roleFilter = c.req.query('role') ?? null
+  const situationFilter = c.req.query('situation') ?? null
+  const followCond = buildFollowCondition(userId, roleFilter)
+  const situationWhere = situationFilter ? sql`AND r.situation = ${situationFilter}` : sql``
+
   const rows = await sql`
     SELECT r.*, p.username, p.display_name, p.avatar_url,
            rs.name AS restaurant_name, rs.genre
     FROM reviews r
     JOIN profiles p ON p.id = r.user_id
     JOIN restaurants rs ON rs.id = r.restaurant_id
-    WHERE r.user_id = ${userId} OR ${mutualFollowCondition(userId)}
+    WHERE (r.user_id = ${userId} OR ${followCond})
+    ${situationWhere}
     ORDER BY r.created_at DESC
   `
   return c.json(rows)
@@ -34,31 +51,38 @@ reviews.get('/', async (c) => {
 
 reviews.get('/map', async (c) => {
   const userId = c.get('userId')
+  const roleFilter = c.req.query('role') ?? null
+  const situationFilter = c.req.query('situation') ?? null
+  const followCond = buildFollowCondition(userId, roleFilter)
+  const situationWhere = situationFilter ? sql`AND r.situation = ${situationFilter}` : sql``
+
   const rows = await sql`
-    SELECT r.id, r.rating,
+    SELECT r.id, r.rating, r.situation,
            p.id AS user_id, p.display_name,
            rs.id AS restaurant_id, rs.name AS restaurant_name, rs.lat, rs.lng
     FROM reviews r
     JOIN profiles p ON p.id = r.user_id
     JOIN restaurants rs ON rs.id = r.restaurant_id
     WHERE rs.lat IS NOT NULL AND rs.lng IS NOT NULL
-      AND (r.user_id = ${userId} OR ${mutualFollowCondition(userId)})
+      AND (r.user_id = ${userId} OR ${followCond})
+    ${situationWhere}
   `
   return c.json(rows)
 })
 
 reviews.post('/', async (c) => {
   const userId = c.get('userId')
-  const { restaurantId, rating, comment, visitedAt } = await c.req.json() as {
+  const { restaurantId, rating, comment, visitedAt, situation } = await c.req.json() as {
     restaurantId: string
     rating: string
     comment?: string
     visitedAt?: string
+    situation?: string
   }
 
   const [created] = await sql`
-    INSERT INTO reviews (user_id, restaurant_id, rating, comment, visited_at)
-    VALUES (${userId}, ${restaurantId}, ${rating}, ${comment ?? null}, ${visitedAt ?? null})
+    INSERT INTO reviews (user_id, restaurant_id, rating, comment, visited_at, situation)
+    VALUES (${userId}, ${restaurantId}, ${rating}, ${comment ?? null}, ${visitedAt ?? null}, ${situation ?? null})
     RETURNING *
   `
   return c.json(created, 201)
@@ -67,13 +91,14 @@ reviews.post('/', async (c) => {
 reviews.get('/:id', async (c) => {
   const userId = c.get('userId')
   const { id } = c.req.param()
+  const followCond = buildFollowCondition(userId, null)
   const [row] = await sql`
     SELECT r.*, p.username, p.display_name, rs.name AS restaurant_name
     FROM reviews r
     JOIN profiles p ON p.id = r.user_id
     JOIN restaurants rs ON rs.id = r.restaurant_id
     WHERE r.id = ${id}
-      AND (r.user_id = ${userId} OR ${mutualFollowCondition(userId)})
+      AND (r.user_id = ${userId} OR ${followCond})
   `
   if (!row) return c.json({ error: { code: 'NOT_FOUND', message: 'レビューが見つかりません' } }, 404)
   return c.json(row)
@@ -82,10 +107,11 @@ reviews.get('/:id', async (c) => {
 reviews.put('/:id', async (c) => {
   const userId = c.get('userId')
   const { id } = c.req.param()
-  const { rating, comment, visitedAt } = await c.req.json() as {
+  const { rating, comment, visitedAt, situation } = await c.req.json() as {
     rating?: string
     comment?: string
     visitedAt?: string
+    situation?: string
   }
 
   const [updated] = await sql`
@@ -93,6 +119,7 @@ reviews.put('/:id', async (c) => {
       rating = COALESCE(${rating ?? null}, rating),
       comment = COALESCE(${comment ?? null}, comment),
       visited_at = COALESCE(${visitedAt ?? null}, visited_at),
+      situation = COALESCE(${situation ?? null}, situation),
       updated_at = NOW()
     WHERE id = ${id} AND user_id = ${userId}
     RETURNING *

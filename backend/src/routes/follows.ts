@@ -10,7 +10,7 @@ follows.use('*', authMiddleware)
 follows.get('/', async (c) => {
   const userId = c.get('userId')
   const rows = await sql`
-    SELECT p.id, p.username, p.display_name, p.avatar_url
+    SELECT p.id, p.username, p.display_name, p.avatar_url, fr.id AS follow_id, fr.role
     FROM follow_requests fr
     JOIN profiles p ON p.id = CASE
       WHEN fr.from_user_id = ${userId} THEN fr.to_user_id
@@ -78,6 +78,22 @@ follows.patch('/requests/:id', async (c) => {
     RETURNING *
   `
   if (!updated) return c.json({ error: { code: 'NOT_FOUND', message: '申請が見つかりません' } }, 404)
+  return c.json(updated)
+})
+
+follows.patch('/:id/role', async (c) => {
+  const userId = c.get('userId')
+  const { id } = c.req.param()
+  const { role } = await c.req.json() as { role: string | null }
+
+  const [updated] = await sql`
+    UPDATE follow_requests SET role = ${role ?? null}
+    WHERE id = ${id}
+      AND status = 'accepted'
+      AND (from_user_id = ${userId} OR to_user_id = ${userId})
+    RETURNING *
+  `
+  if (!updated) return c.json({ error: { code: 'NOT_FOUND', message: 'フォロー関係が見つかりません' } }, 404)
   return c.json(updated)
 })
 
