@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
-import { Box, Typography, Chip } from '@mui/material'
+import { Box, Typography, Chip, Divider } from '@mui/material'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { supabase } from '../supabase'
@@ -12,14 +12,21 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, shadowUrl: markerShadow })
 
-type MapReview = {
+type ReviewSummary = {
   id: string
   rating: string
+  situation: string | null
+  comment: string | null
   display_name: string
+  visited_at: string | null
+}
+
+type MapRestaurant = {
   restaurant_id: string
   restaurant_name: string
   lat: number | string
   lng: number | string
+  reviews: ReviewSummary[]
 }
 
 const RATING_LABEL: Record<string, string> = {
@@ -31,7 +38,7 @@ const RATING_LABEL: Record<string, string> = {
 const apiBase = import.meta.env.VITE_API_BASE_URL as string
 
 export default function MapPage() {
-  const [reviews, setReviews] = useState<MapReview[]>([])
+  const [restaurants, setRestaurants] = useState<MapRestaurant[]>([])
   const [roleFilter, setRoleFilter] = useState<string | null>(null)
   const [situationFilter, setSituationFilter] = useState<string | null>(null)
 
@@ -44,7 +51,7 @@ export default function MapPage() {
       headers: { Authorization: `Bearer ${session?.access_token}` },
     })
     const data = await res.json()
-    setReviews(Array.isArray(data) ? data : [])
+    setRestaurants(Array.isArray(data) ? data : [])
   }, [roleFilter, situationFilter])
 
   useEffect(() => {
@@ -86,12 +93,24 @@ export default function MapPage() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {reviews.map((r) => (
-          <Marker key={r.id} position={[Number(r.lat), Number(r.lng)]}>
-            <Popup>
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{r.restaurant_name}</Typography>
-              <Typography variant="body2">{r.display_name}</Typography>
-              <Typography variant="body2">{RATING_LABEL[r.rating] ?? r.rating}</Typography>
+        {restaurants.map((rs) => (
+          <Marker key={rs.restaurant_id} position={[Number(rs.lat), Number(rs.lng)]}>
+            <Popup minWidth={200}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                {rs.restaurant_name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {rs.reviews.length}件のレビュー
+              </Typography>
+              {rs.reviews.map((rv, i) => (
+                <Box key={rv.id}>
+                  {i > 0 && <Divider sx={{ my: 0.5 }} />}
+                  <Typography variant="body2" sx={{ fontWeight: 'medium' }}>{rv.display_name}</Typography>
+                  <Typography variant="body2">{RATING_LABEL[rv.rating] ?? rv.rating}</Typography>
+                  {rv.situation && <Typography variant="caption" color="text.secondary">{rv.situation}</Typography>}
+                  {rv.comment && <Typography variant="body2" sx={{ mt: 0.5 }}>{rv.comment}</Typography>}
+                </Box>
+              ))}
             </Popup>
           </Marker>
         ))}

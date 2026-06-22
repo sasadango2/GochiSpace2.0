@@ -57,15 +57,26 @@ reviews.get('/map', async (c) => {
   const situationWhere = situationFilter ? sql`AND r.situation = ${situationFilter}` : sql``
 
   const rows = await sql`
-    SELECT r.id, r.rating, r.situation,
-           p.id AS user_id, p.display_name,
-           rs.id AS restaurant_id, rs.name AS restaurant_name, rs.lat, rs.lng
+    SELECT
+      rs.id AS restaurant_id,
+      rs.name AS restaurant_name,
+      rs.lat,
+      rs.lng,
+      json_agg(json_build_object(
+        'id', r.id,
+        'rating', r.rating,
+        'situation', r.situation,
+        'comment', r.comment,
+        'display_name', p.display_name,
+        'visited_at', r.visited_at
+      ) ORDER BY r.created_at DESC) AS reviews
     FROM reviews r
     JOIN profiles p ON p.id = r.user_id
     JOIN restaurants rs ON rs.id = r.restaurant_id
     WHERE rs.lat IS NOT NULL AND rs.lng IS NOT NULL
       AND (r.user_id = ${userId} OR ${followCond})
     ${situationWhere}
+    GROUP BY rs.id, rs.name, rs.lat, rs.lng
   `
   return c.json(rows)
 })
