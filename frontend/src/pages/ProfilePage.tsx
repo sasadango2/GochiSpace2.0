@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Box, Typography, TextField, Button, Chip, CircularProgress, Alert } from '@mui/material'
+import { Box, Typography, TextField, Button, Chip, CircularProgress, Alert, Divider } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
 type Genre = { id: number; name: string }
@@ -13,6 +14,7 @@ async function getToken() {
 }
 
 export default function ProfilePage() {
+  const navigate = useNavigate()
   const [profile, setProfile] = useState<Profile>({ username: '', display_name: '' })
   const [genres, setGenres] = useState<Genre[]>([])
   const [selectedGenres, setSelectedGenres] = useState<number[]>([])
@@ -43,6 +45,11 @@ export default function ProfilePage() {
     setSelectedGenres((prev) =>
       prev.includes(id) ? prev.filter((g) => g !== id) : prev.length < 3 ? [...prev, id] : prev
     )
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    navigate('/login')
   }
 
   const handleSave = async () => {
@@ -94,6 +101,8 @@ export default function ProfilePage() {
         ))}
       </Box>
       <Button variant="contained" fullWidth onClick={handleSave}>保存</Button>
+      <Divider sx={{ my: 3 }} />
+      <Button variant="outlined" color="error" fullWidth onClick={handleLogout}>ログアウト</Button>
     </Box>
   )
 }
