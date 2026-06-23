@@ -54,7 +54,7 @@ function Layout() {
           }}
         >
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" color="primary" fontWeight="bold">GochiSpace</Typography>
+            <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>GochiSpace</Typography>
           </Box>
           <List sx={{ pt: 1 }}>
             {NAV_ITEMS.map((item) => (
@@ -83,7 +83,7 @@ function Layout() {
             sx={{ bgcolor: 'background.paper', color: 'text.primary', borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}
           >
             <Toolbar variant="dense">
-              <Typography variant="h6" color="primary" fontWeight="bold">GochiSpace</Typography>
+              <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>GochiSpace</Typography>
             </Toolbar>
           </AppBar>
         )}
