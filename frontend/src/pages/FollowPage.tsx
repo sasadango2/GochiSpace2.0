@@ -76,6 +76,7 @@ export default function FollowPage() {
   }
 
   return (
+    <Box sx={{ height: '100%', overflow: 'auto' }}>
     <Box sx={{ maxWidth: 600, mx: 'auto', px: 2, pt: 2, pb: 10 }}>
       <Typography variant="h6" sx={{ mb: 2 }}>フォロー管理</Typography>
 
@@ -143,6 +144,7 @@ export default function FollowPage() {
           </ListItem>
         ))}
       </List>
+    </Box>
     </Box>
   )
 }

@@ -1,5 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
-import { BottomNavigation, BottomNavigationAction, Paper, Fab } from '@mui/material'
+import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom'
+import {
+  BottomNavigation, BottomNavigationAction, Paper, Fab,
+  Drawer, Box, List, ListItemButton, ListItemIcon, ListItemText,
+  AppBar, Toolbar, Typography, useTheme, useMediaQuery,
+} from '@mui/material'
 import MapIcon from '@mui/icons-material/Map'
 import ListIcon from '@mui/icons-material/List'
 import PersonIcon from '@mui/icons-material/Person'
@@ -15,26 +19,113 @@ import FeedPage from './pages/FeedPage'
 import ProfilePage from './pages/ProfilePage'
 import FollowPage from './pages/FollowPage'
 
+const DRAWER_WIDTH = 240
+
+const NAV_ITEMS = [
+  { path: '/map', label: 'マップ', icon: <MapIcon /> },
+  { path: '/feed', label: 'フィード', icon: <ListIcon /> },
+  { path: '/follows', label: 'フォロー', icon: <PeopleIcon /> },
+  { path: '/profile', label: 'プロフィール', icon: <PersonIcon /> },
+]
+
 function Layout() {
-  const [nav, setNav] = useState(0)
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const location = useLocation()
   const [dialogOpen, setDialogOpen] = useState(false)
 
+  const currentNav = NAV_ITEMS.findIndex((n) => location.pathname.startsWith(n.path))
+
   return (
-    <>
-      <Routes>
-        <Route path="/map" element={<MapPage />} />
-        <Route path="/feed" element={<FeedPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/follows" element={<FollowPage />} />
-        <Route path="*" element={<Navigate to="/map" />} />
-      </Routes>
+    <Box sx={{ display: 'flex', height: '100dvh', overflow: 'hidden' }}>
+      {/* PC: サイドバー */}
+      {!isMobile && (
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: DRAWER_WIDTH,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: DRAWER_WIDTH,
+              boxSizing: 'border-box',
+              borderRight: 1,
+              borderColor: 'divider',
+            },
+          }}
+        >
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Typography variant="h6" color="primary" fontWeight="bold">GochiSpace</Typography>
+          </Box>
+          <List sx={{ pt: 1 }}>
+            {NAV_ITEMS.map((item) => (
+              <ListItemButton
+                key={item.path}
+                component={Link}
+                to={item.path}
+                selected={location.pathname.startsWith(item.path)}
+                sx={{ borderRadius: 1, mx: 1, mb: 0.5 }}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            ))}
+          </List>
+        </Drawer>
+      )}
+
+      {/* コンテンツエリア */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+        {/* スマホ: 上部 AppBar */}
+        {isMobile && (
+          <AppBar
+            position="static"
+            elevation={0}
+            sx={{ bgcolor: 'background.paper', color: 'text.primary', borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}
+          >
+            <Toolbar variant="dense">
+              <Typography variant="h6" color="primary" fontWeight="bold">GochiSpace</Typography>
+            </Toolbar>
+          </AppBar>
+        )}
+
+        {/* ページ内容 */}
+        <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+          <Routes>
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/feed" element={<FeedPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/follows" element={<FollowPage />} />
+            <Route path="*" element={<Navigate to="/map" />} />
+          </Routes>
+        </Box>
+
+        {/* スマホ: ボトムナビ */}
+        {isMobile && (
+          <Paper elevation={3} sx={{ flexShrink: 0 }}>
+            <BottomNavigation value={currentNav === -1 ? 0 : currentNav}>
+              {NAV_ITEMS.map((item) => (
+                <BottomNavigationAction
+                  key={item.path}
+                  label={item.label}
+                  icon={item.icon}
+                  component={Link}
+                  to={item.path}
+                />
+              ))}
+            </BottomNavigation>
+          </Paper>
+        )}
+      </Box>
+
+      {/* レビュー投稿 FAB */}
       <Fab
         color="primary"
-        sx={{ position: 'fixed', bottom: 72, right: 16 }}
+        sx={{ position: 'fixed', bottom: isMobile ? 72 : 24, right: 24 }}
         onClick={() => setDialogOpen(true)}
       >
         <AddIcon />
       </Fab>
+
       <ReviewPostDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
@@ -43,15 +134,7 @@ function Layout() {
           window.dispatchEvent(new CustomEvent('review-posted'))
         }}
       />
-      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
-        <BottomNavigation value={nav} onChange={(_, v) => setNav(v)}>
-          <BottomNavigationAction label="マップ" icon={<MapIcon />} component={Link} to="/map" />
-          <BottomNavigationAction label="フィード" icon={<ListIcon />} component={Link} to="/feed" />
-          <BottomNavigationAction label="フォロー" icon={<PeopleIcon />} component={Link} to="/follows" />
-          <BottomNavigationAction label="プロフィール" icon={<PersonIcon />} component={Link} to="/profile" />
-        </BottomNavigation>
-      </Paper>
-    </>
+    </Box>
   )
 }
 

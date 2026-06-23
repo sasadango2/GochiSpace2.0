@@ -64,7 +64,7 @@ export default function MapPage() {
     setter(current === value ? null : value)
 
   return (
-    <Box sx={{ height: 'calc(100vh - 56px)', position: 'relative' }}>
+    <Box sx={{ height: '100%', position: 'relative' }}>
       <Box sx={{
         position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
         zIndex: 1000, bgcolor: 'background.paper', borderRadius: 2, p: 1,

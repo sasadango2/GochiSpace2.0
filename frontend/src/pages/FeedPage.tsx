@@ -46,6 +46,7 @@ export default function FeedPage() {
     setter(current === value ? null : value)
 
   return (
+    <Box sx={{ height: '100%', overflow: 'auto' }}>
     <Box sx={{ maxWidth: 600, mx: 'auto', px: 2, pt: 2, pb: 10 }}>
       <Typography variant="h6" sx={{ mb: 1 }}>フィード</Typography>
 
@@ -74,6 +75,7 @@ export default function FeedPage() {
       {loading && <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>}
       {!loading && reviews.length === 0 && <Typography color="text.secondary">レビューがまだありません</Typography>}
       {reviews.map((review) => <ReviewCard key={review.id} review={review} />)}
+    </Box>
     </Box>
   )
 }

@@ -72,7 +72,8 @@ export default function ProfilePage() {
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', px: 2, pt: 2 }}>
+    <Box sx={{ height: '100%', overflow: 'auto' }}>
+    <Box sx={{ maxWidth: 600, mx: 'auto', px: 2, pt: 2, pb: 6 }}>
       <Typography variant="h6" sx={{ mb: 2 }}>プロフィール</Typography>
       {message && <Alert severity="success" sx={{ mb: 2 }}>{message}</Alert>}
       <TextField
@@ -103,6 +104,7 @@ export default function ProfilePage() {
       <Button variant="contained" fullWidth onClick={handleSave}>保存</Button>
       <Divider sx={{ my: 3 }} />
       <Button variant="outlined" color="error" fullWidth onClick={handleLogout}>ログアウト</Button>
+    </Box>
     </Box>
   )
 }

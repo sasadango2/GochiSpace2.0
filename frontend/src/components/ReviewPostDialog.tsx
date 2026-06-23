@@ -3,6 +3,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, List, ListItemButton, ListItemText,
   ToggleButtonGroup, ToggleButton, Typography, Box, CircularProgress,
+  useTheme, useMediaQuery,
 } from '@mui/material'
 import { supabase } from '../supabase'
 import { SITUATIONS } from '../constants'
@@ -36,6 +37,8 @@ async function getToken(): Promise<string> {
 }
 
 export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const [step, setStep] = useState<1 | 2>(1)
   const [keyword, setKeyword] = useState('')
   const [results, setResults] = useState<Restaurant[]>([])
@@ -97,7 +100,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
   }
 
   return (
-    <Dialog open={open} onClose={resetAndClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={resetAndClose} fullWidth maxWidth="sm" fullScreen={isMobile}>
       <DialogTitle>
         {step === 1 ? 'お店を選ぶ' : `「${selected?.name}」のレビュー`}
       </DialogTitle>
