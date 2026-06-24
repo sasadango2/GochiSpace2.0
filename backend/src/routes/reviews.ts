@@ -7,6 +7,21 @@ const reviews = new Hono<AppEnv>()
 
 reviews.use('*', authMiddleware)
 
+const buildUserCondition = (userId: string, onlyMine: boolean, targetUserId: string | null, roleFilter: string | null) => {
+  if (onlyMine) return sql`r.user_id = ${userId}`
+  if (targetUserId) {
+    return sql`r.user_id = ${targetUserId} AND (
+      SELECT COUNT(*) FROM follow_requests
+      WHERE status = 'accepted'
+        AND (
+          (from_user_id = ${userId} AND to_user_id = ${targetUserId}) OR
+          (to_user_id = ${userId} AND from_user_id = ${targetUserId})
+        )
+    ) > 0`
+  }
+  return sql`(r.user_id = ${userId} OR ${buildFollowCondition(userId, roleFilter)})`
+}
+
 const buildFollowCondition = (userId: string, roleFilter: string | null) => {
   if (roleFilter) {
     return sql`(
@@ -53,7 +68,10 @@ reviews.get('/map', async (c) => {
   const userId = c.get('userId')
   const roleFilter = c.req.query('role') ?? null
   const situationFilter = c.req.query('situation') ?? null
-  const followCond = buildFollowCondition(userId, roleFilter)
+  const onlyMine = c.req.query('onlyMine') === 'true'
+  const targetUserId = c.req.query('targetUserId') ?? null
+
+  const userCond = buildUserCondition(userId, onlyMine, targetUserId, roleFilter)
   const situationWhere = situationFilter ? sql`AND r.situation = ${situationFilter}` : sql``
 
   const rows = await sql`
@@ -62,6 +80,7 @@ reviews.get('/map', async (c) => {
       rs.name AS restaurant_name,
       rs.lat,
       rs.lng,
+      rs.genre,
       json_agg(json_build_object(
         'id', r.id,
         'rating', r.rating,
@@ -74,9 +93,9 @@ reviews.get('/map', async (c) => {
     JOIN profiles p ON p.id = r.user_id
     JOIN restaurants rs ON rs.id = r.restaurant_id
     WHERE rs.lat IS NOT NULL AND rs.lng IS NOT NULL
-      AND (r.user_id = ${userId} OR ${followCond})
+      AND ${userCond}
     ${situationWhere}
-    GROUP BY rs.id, rs.name, rs.lat, rs.lng
+    GROUP BY rs.id, rs.name, rs.lat, rs.lng, rs.genre
   `
   return c.json(rows)
 })
