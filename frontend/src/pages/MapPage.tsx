@@ -10,7 +10,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { supabase } from '../supabase'
-import { ROLES, SITUATIONS } from '../constants'
+import { ROLES, SITUATIONS, normalizeGenre } from '../constants'
 
 // ── 型定義 ──────────────────────────────────────
 type ReviewSummary = {
@@ -182,8 +182,12 @@ export default function MapPage() {
     const res = await fetch(`${apiBase}/api/v1/reviews/map?${params}`, {
       headers: { Authorization: `Bearer ${session?.access_token}` },
     })
-    const data = await res.json()
-    setRestaurants(Array.isArray(data) ? data : [])
+    const data: MapRestaurant[] = await res.json()
+    setRestaurants(
+      Array.isArray(data)
+        ? data.map((rs) => ({ ...rs, genre: normalizeGenre(rs.genre) }))
+        : []
+    )
   }, [roleFilter, situationFilter, onlyMine, targetUserId])
 
   useEffect(() => {

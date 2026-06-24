@@ -5,7 +5,7 @@ import {
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import { supabase } from '../supabase'
-import { ROLES, SITUATIONS } from '../constants'
+import { ROLES, SITUATIONS, normalizeGenre } from '../constants'
 
 type Review = {
   id: string
@@ -71,7 +71,7 @@ export default function FeedPage() {
         map.set(r.restaurant_id, {
           restaurant_id: r.restaurant_id,
           restaurant_name: r.restaurant_name,
-          genre: r.genre ?? null,
+          genre: normalizeGenre(r.genre),
           reviews: [],
         })
       }
