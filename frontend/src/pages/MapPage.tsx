@@ -34,7 +34,7 @@ type MapRestaurant = {
 type MutualFollow = { id: string; display_name: string; username: string }
 
 // ── 定数 ────────────────────────────────────────
-const PRIMARY = '#7c3aed'
+const PRIMARY = '#e8651a'
 const TOKYO: [number, number] = [35.6812, 139.7671]
 
 const DISTANCE_OPTIONS: { label: string; value: number | null }[] = [
@@ -69,7 +69,7 @@ function createPinIcon(count: number) {
   return L.divIcon({
     className: '',
     html: `
-      <div style="position:relative;width:36px;height:44px;filter:drop-shadow(0 2px 4px rgba(124,58,237,0.4))">
+      <div style="position:relative;width:36px;height:44px;filter:drop-shadow(0 2px 4px rgba(232,101,26,0.4))">
         <svg width="36" height="44" viewBox="0 0 36 44" xmlns="http://www.w3.org/2000/svg">
           <path d="M18 0C8.06 0 0 8.06 0 18c0 12.15 18 26 18 26s18-13.85 18-26C36 8.06 27.94 0 18 0z" fill="${PRIMARY}"/>
           <circle cx="18" cy="18" r="11" fill="white"/>
