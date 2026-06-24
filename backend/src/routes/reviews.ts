@@ -53,7 +53,7 @@ reviews.get('/', async (c) => {
 
   const rows = await sql`
     SELECT r.*, p.username, p.display_name, p.avatar_url,
-           rs.name AS restaurant_name, rs.genre
+           rs.name AS restaurant_name, rs.genre, rs.lat, rs.lng
     FROM reviews r
     JOIN profiles p ON p.id = r.user_id
     JOIN restaurants rs ON rs.id = r.restaurant_id

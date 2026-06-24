@@ -103,10 +103,22 @@ function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
     <Marker position={[Number(rs.lat), Number(rs.lng)]} icon={icon}>
       <Popup minWidth={220} maxWidth={280}>
         <Box sx={{ bgcolor: PRIMARY, mx: -1.5, mt: -1.5, mb: 1, px: 1.5, py: 1, borderRadius: '8px 8px 0 0' }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'white' }}>{rs.restaurant_name}</Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-            {rs.reviews.length}件のレビュー{rs.genre ? ` · ${rs.genre}` : ''}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'white' }}>{rs.restaurant_name}</Typography>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                {rs.reviews.length}件のレビュー{rs.genre ? ` · ${rs.genre}` : ''}
+              </Typography>
+            </Box>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${rs.lat},${rs.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'white', fontSize: 11, whiteSpace: 'nowrap', marginTop: 2, textDecoration: 'underline' }}
+            >
+              ルート
+            </a>
+          </Box>
         </Box>
         {rs.reviews.map((rv, i) => {
           const info = RATING_LABEL[rv.rating]

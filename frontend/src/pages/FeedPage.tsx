@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   Box, Typography, CircularProgress, Chip, Divider,
-  Card, CardActionArea, CardContent, Drawer, IconButton,
+  Card, CardActionArea, CardContent, Drawer, IconButton, Button,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
+import DirectionsIcon from '@mui/icons-material/Directions'
 import { supabase } from '../supabase'
 import { ROLES, SITUATIONS, normalizeGenre } from '../constants'
 
@@ -13,6 +14,8 @@ type Review = {
   display_name: string
   restaurant_name: string
   genre: string | null
+  lat: number | string | null
+  lng: number | string | null
   rating: 'want_to_revisit' | 'average' | 'not_good'
   situation?: string
   comment?: string
@@ -23,6 +26,8 @@ type RestaurantGroup = {
   restaurant_id: string
   restaurant_name: string
   genre: string | null
+  lat: number | null
+  lng: number | null
   reviews: Review[]
 }
 
@@ -72,6 +77,8 @@ export default function FeedPage() {
           restaurant_id: r.restaurant_id,
           restaurant_name: r.restaurant_name,
           genre: normalizeGenre(r.genre),
+          lat: r.lat != null ? Number(r.lat) : null,
+          lng: r.lng != null ? Number(r.lng) : null,
           reviews: [],
         })
       }
@@ -192,7 +199,21 @@ export default function FeedPage() {
                   <Typography variant="caption" color="text.secondary">{selectedGroup.genre}</Typography>
                 )}
               </Box>
-              <IconButton size="small" onClick={() => setSelectedId(null)}><CloseIcon /></IconButton>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {selectedGroup.lat != null && selectedGroup.lng != null && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<DirectionsIcon />}
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${selectedGroup.lat},${selectedGroup.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    ルート
+                  </Button>
+                )}
+                <IconButton size="small" onClick={() => setSelectedId(null)}><CloseIcon /></IconButton>
+              </Box>
             </Box>
             <Divider />
 
