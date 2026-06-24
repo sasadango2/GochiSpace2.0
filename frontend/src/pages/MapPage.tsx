@@ -99,47 +99,79 @@ function FlyToLocation({ position }: { position: [number, number] }) {
 // ── マーカーコンポーネント ───────────────────────
 function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
   const icon = useMemo(() => createPinIcon(rs.reviews.length), [rs.reviews.length])
+  const visible = rs.reviews.slice(0, 3)
+  const hidden = rs.reviews.length - visible.length
+
   return (
     <Marker position={[Number(rs.lat), Number(rs.lng)]} icon={icon}>
-      <Popup minWidth={220} maxWidth={280}>
+      <Popup minWidth={240} maxWidth={300}>
+        {/* ヘッダー */}
         <Box sx={{ bgcolor: PRIMARY, mx: -1.5, mt: -1.5, mb: 1, px: 1.5, py: 1, borderRadius: '8px 8px 0 0' }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'white' }}>{rs.restaurant_name}</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'white' }} noWrap>
+                {rs.restaurant_name}
+              </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                {rs.reviews.length}件のレビュー{rs.genre ? ` · ${rs.genre}` : ''}
+                {rs.reviews.length}件{rs.genre ? ` · ${rs.genre}` : ''}
               </Typography>
             </Box>
             <a
               href={`https://www.google.com/maps/dir/?api=1&destination=${rs.lat},${rs.lng}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: 'white', fontSize: 11, whiteSpace: 'nowrap', marginTop: 2, textDecoration: 'underline' }}
+              style={{ color: 'white', fontSize: 11, whiteSpace: 'nowrap', textDecoration: 'underline', flexShrink: 0 }}
             >
               ルート
             </a>
           </Box>
         </Box>
-        {rs.reviews.map((rv, i) => {
+
+        {/* レビュー一覧 */}
+        {visible.map((rv, i) => {
           const info = RATING_LABEL[rv.rating]
+          const sub = [rv.situation, rv.comment].filter(Boolean).join(' · ')
           return (
             <Box key={rv.id}>
-              {i > 0 && <Divider sx={{ my: 0.75 }} />}
-              <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.25 }}>{rv.display_name}</Typography>
-              {info && (
-                <Typography variant="caption" sx={{ color: info.color, fontWeight: 'bold', display: 'block' }}>
-                  {info.text}
+              {i > 0 && <Divider sx={{ my: 0.5 }} />}
+              {/* 1行目: アバター + 名前 + 評価 */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <Box sx={{
+                  width: 22, height: 22, borderRadius: '50%',
+                  bgcolor: `${PRIMARY}22`, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 'bold', color: PRIMARY, lineHeight: 1 }}>
+                    {rv.display_name.charAt(0)}
+                  </Typography>
+                </Box>
+                <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }} noWrap>
+                  {rv.display_name}
                 </Typography>
-              )}
-              {rv.situation && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{rv.situation}</Typography>
-              )}
-              {rv.comment && (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>{rv.comment}</Typography>
+                {info && (
+                  <Typography variant="caption" sx={{ color: info.color, fontWeight: 'bold', flexShrink: 0 }}>
+                    {info.text}
+                  </Typography>
+                )}
+              </Box>
+              {/* 2行目: シチュエーション + コメント（1行で省略） */}
+              {sub && (
+                <Typography variant="caption" color="text.secondary" sx={{
+                  display: 'block', pl: '30px',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {sub}
+                </Typography>
               )}
             </Box>
           )
         })}
+
+        {hidden > 0 && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75, textAlign: 'center' }}>
+            他{hidden}件のレビュー
+          </Typography>
+        )}
       </Popup>
     </Marker>
   )
