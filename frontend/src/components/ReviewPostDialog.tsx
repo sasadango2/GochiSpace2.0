@@ -69,8 +69,10 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
     setStep(2)
   }
 
+  const canSubmit = !!(rating && genre && situation && visitedAt)
+
   const handleSubmit = async () => {
-    if (!selected || !rating) return
+    if (!selected || !canSubmit) return
     setSubmitting(true)
     const token = await getToken()
     await fetch(`${API_BASE}/api/v1/reviews`, {
@@ -161,7 +163,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
               </ToggleButtonGroup>
             </Box>
             <Box>
-              <Typography variant="body2" sx={{ mb: 1 }}>ジャンル（任意）</Typography>
+              <Typography variant="body2" sx={{ mb: 1 }}>ジャンル *</Typography>
               <ToggleButtonGroup
                 value={genre}
                 exclusive
@@ -174,7 +176,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
               </ToggleButtonGroup>
             </Box>
             <Box>
-              <Typography variant="body2" sx={{ mb: 1 }}>シチュエーション（任意）</Typography>
+              <Typography variant="body2" sx={{ mb: 1 }}>シチュエーション *</Typography>
               <ToggleButtonGroup
                 value={situation}
                 exclusive
@@ -195,7 +197,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
               fullWidth
             />
             <TextField
-              label="訪問日（任意）"
+              label="訪問日 *"
               type="date"
               value={visitedAt}
               onChange={(e) => setVisitedAt(e.target.value)}
@@ -213,7 +215,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
           <Button
             variant="contained"
             onClick={handleSubmit}
-            disabled={!rating || submitting}
+            disabled={!canSubmit || submitting}
           >
             {submitting ? <CircularProgress size={20} color="inherit" /> : '投稿する'}
           </Button>
