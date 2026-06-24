@@ -3,7 +3,7 @@ import {
   BottomNavigation, BottomNavigationAction, Paper,
   Drawer, Box, List, ListItemButton, ListItemIcon, ListItemText,
   AppBar, Toolbar, Typography, useTheme, useMediaQuery,
-  SpeedDial, SpeedDialAction, SpeedDialIcon, Badge, IconButton,
+  Fab, Badge, IconButton, Button, Divider,
 } from '@mui/material'
 import MapIcon from '@mui/icons-material/Map'
 import ListIcon from '@mui/icons-material/List'
@@ -12,6 +12,7 @@ import PeopleIcon from '@mui/icons-material/People'
 import RateReviewIcon from '@mui/icons-material/RateReview'
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd'
 import NotificationsIcon from '@mui/icons-material/Notifications'
+
 import { useState, useEffect } from 'react'
 import AuthGuard from './components/AuthGuard'
 import ReviewPostDialog from './components/ReviewPostDialog'
@@ -98,6 +99,8 @@ function Layout() {
               boxSizing: 'border-box',
               borderRight: 1,
               borderColor: 'divider',
+              display: 'flex',
+              flexDirection: 'column',
             },
           }}
         >
@@ -114,7 +117,7 @@ function Layout() {
               </Badge>
             </IconButton>
           </Box>
-          <List sx={{ pt: 1 }}>
+          <List sx={{ pt: 1, flex: 1 }}>
             {NAV_ITEMS.map((item) => (
               <ListItemButton
                 key={item.path}
@@ -128,6 +131,25 @@ function Layout() {
               </ListItemButton>
             ))}
           </List>
+          <Divider />
+          <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Button
+              variant="contained"
+              startIcon={<RateReviewIcon />}
+              onClick={() => setReviewDialogOpen(true)}
+              fullWidth
+            >
+              レビュー投稿
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<BookmarkAddIcon />}
+              onClick={() => setWannaGoDialogOpen(true)}
+              fullWidth
+            >
+              行きたい追加
+            </Button>
+          </Box>
         </Drawer>
       )}
 
@@ -186,21 +208,21 @@ function Layout() {
         )}
       </Box>
 
-      {/* SpeedDial FAB */}
-      <SpeedDial
-        ariaLabel="メニュー"
-        sx={{ position: 'fixed', bottom: isMobile ? 72 : 24, right: 24 }}
-        icon={<SpeedDialIcon />}
-      >
-        <SpeedDialAction
-          icon={<RateReviewIcon />}
-          onClick={() => setReviewDialogOpen(true)}
-        />
-        <SpeedDialAction
-          icon={<BookmarkAddIcon />}
-          onClick={() => setWannaGoDialogOpen(true)}
-        />
-      </SpeedDial>
+      {/* モバイル: テキスト付きFAB */}
+      {isMobile && (
+        <Box sx={{ position: 'fixed', bottom: 72, right: 16, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+          <Fab variant="extended" size="medium" color="primary" onClick={() => setReviewDialogOpen(true)}
+            sx={{ boxShadow: 3 }}>
+            <RateReviewIcon sx={{ mr: 1 }} />
+            レビュー投稿
+          </Fab>
+          <Fab variant="extended" size="medium" onClick={() => setWannaGoDialogOpen(true)}
+            sx={{ bgcolor: 'white', color: 'primary.main', boxShadow: 3, border: '1px solid', borderColor: 'primary.main', '&:hover': { bgcolor: 'primary.50' } }}>
+            <BookmarkAddIcon sx={{ mr: 1 }} />
+            行きたい追加
+          </Fab>
+        </Box>
+      )}
 
       <ReviewPostDialog
         open={reviewDialogOpen}
