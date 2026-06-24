@@ -102,12 +102,17 @@ reviews.get('/map', async (c) => {
 
 reviews.post('/', async (c) => {
   const userId = c.get('userId')
-  const { restaurantId, rating, comment, visitedAt, situation } = await c.req.json() as {
+  const { restaurantId, rating, comment, visitedAt, situation, genre } = await c.req.json() as {
     restaurantId: string
     rating: string
     comment?: string
     visitedAt?: string
     situation?: string
+    genre?: string
+  }
+
+  if (genre) {
+    await sql`UPDATE restaurants SET genre = ${genre} WHERE id = ${restaurantId}`
   }
 
   const [created] = await sql`

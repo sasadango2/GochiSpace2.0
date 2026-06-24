@@ -6,7 +6,7 @@ import {
   useTheme, useMediaQuery,
 } from '@mui/material'
 import { supabase } from '../supabase'
-import { SITUATIONS } from '../constants'
+import { SITUATIONS, GENRES } from '../constants'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
 
@@ -14,7 +14,7 @@ type Restaurant = {
   id: string
   name: string
   address: string
-  genre: string
+  genre: string | null
 }
 
 type RatingType = 'want_to_revisit' | 'average' | 'not_good'
@@ -45,6 +45,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
   const [selected, setSelected] = useState<Restaurant | null>(null)
   const [rating, setRating] = useState<RatingType | null>(null)
   const [situation, setSituation] = useState<string | null>(null)
+  const [genre, setGenre] = useState<string | null>(null)
   const [comment, setComment] = useState('')
   const [visitedAt, setVisitedAt] = useState('')
   const [searching, setSearching] = useState(false)
@@ -64,6 +65,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
 
   const handleSelect = (r: Restaurant) => {
     setSelected(r)
+    setGenre(r.genre ?? null)
     setStep(2)
   }
 
@@ -80,6 +82,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
         situation: situation || undefined,
         comment: comment || undefined,
         visitedAt: visitedAt || undefined,
+        genre: genre || undefined,
       }),
     })
     setSubmitting(false)
@@ -94,6 +97,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
     setSelected(null)
     setRating(null)
     setSituation(null)
+    setGenre(null)
     setComment('')
     setVisitedAt('')
     onClose()
@@ -153,6 +157,19 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
                   <ToggleButton key={r.value} value={r.value} size="small">
                     {r.label}
                   </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Box>
+            <Box>
+              <Typography variant="body2" sx={{ mb: 1 }}>ジャンル（任意）</Typography>
+              <ToggleButtonGroup
+                value={genre}
+                exclusive
+                onChange={(_, v: string | null) => setGenre(v)}
+                sx={{ flexWrap: 'wrap', gap: 0.5 }}
+              >
+                {GENRES.map((g) => (
+                  <ToggleButton key={g} value={g} size="small">{g}</ToggleButton>
                 ))}
               </ToggleButtonGroup>
             </Box>

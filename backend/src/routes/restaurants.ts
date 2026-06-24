@@ -6,6 +6,37 @@ const restaurants = new Hono()
 
 restaurants.use('*', authMiddleware)
 
+const PLACE_TYPE_TO_GENRE: Record<string, string> = {
+  ramen_restaurant: 'ラーメン',
+  italian_restaurant: 'イタリアン',
+  chinese_restaurant: '中華',
+  japanese_restaurant: '和食',
+  sushi_restaurant: '寿司',
+  pizza_restaurant: 'ピザ',
+  steak_house: '焼肉',
+  barbecue_restaurant: '焼肉',
+  french_restaurant: 'フレンチ',
+  indian_restaurant: 'インド料理',
+  thai_restaurant: 'タイ料理',
+  korean_restaurant: '韓国料理',
+  cafe: 'カフェ',
+  coffee_shop: 'カフェ',
+  bar: 'バー',
+  fast_food_restaurant: 'ファストフード',
+  hamburger_restaurant: 'バーガー',
+  seafood_restaurant: 'シーフード',
+  noodle_restaurant: 'ラーメン',
+  izakaya: '居酒屋',
+}
+
+function mapGenre(types: string[] | undefined): string | null {
+  if (!types) return null
+  for (const t of types) {
+    if (PLACE_TYPE_TO_GENRE[t]) return PLACE_TYPE_TO_GENRE[t]
+  }
+  return null
+}
+
 restaurants.get('/search', async (c) => {
   const q = c.req.query('q')
   if (!q) return c.json({ error: { code: 'BAD_REQUEST', message: 'クエリが必要です' } }, 400)
@@ -32,7 +63,7 @@ restaurants.get('/search', async (c) => {
     address: p.formattedAddress,
     lat: p.location.latitude,
     lng: p.location.longitude,
-    genre: p.types?.[0] ?? null,
+    genre: mapGenre(p.types),
     photo_url: p.photos?.[0]
       ? `https://places.googleapis.com/v1/${p.photos[0].name}/media?maxWidthPx=400&key=${apiKey}`
       : null,
