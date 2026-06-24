@@ -131,10 +131,10 @@ function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
             {rs.reviews.map((rv, i) => {
               const info = RATING_LABEL[rv.rating]
               const date = rv.visited_at ? rv.visited_at.slice(0, 10) : null
-              const sub = [date, rv.situation, rv.comment].filter(Boolean).join(' · ')
               return (
                 <Box key={rv.id}>
                   {i > 0 && <Divider sx={{ my: 0.5 }} />}
+                  {/* 1行目: アバター + 名前 + 評価 */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, py: 0.25 }}>
                     <Box sx={{
                       width: 22, height: 22, borderRadius: '50%',
@@ -154,12 +154,19 @@ function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
                       </Typography>
                     )}
                   </Box>
-                  {sub && (
+                  {/* 2行目: 訪問日 · シチュエーション */}
+                  {(date || rv.situation) && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', pl: '30px' }}>
+                      {[date, rv.situation].filter(Boolean).join(' · ')}
+                    </Typography>
+                  )}
+                  {/* 3行目: コメント */}
+                  {rv.comment && (
                     <Typography variant="caption" color="text.secondary" sx={{
                       display: 'block', pl: '30px',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
-                      {sub}
+                      {rv.comment}
                     </Typography>
                   )}
                 </Box>
