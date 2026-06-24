@@ -130,7 +130,8 @@ function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
           <Box sx={{ overflowY: 'auto', px: 1.5, py: 0.5 }}>
             {rs.reviews.map((rv, i) => {
               const info = RATING_LABEL[rv.rating]
-              const sub = [rv.situation, rv.comment].filter(Boolean).join(' · ')
+              const date = rv.visited_at ? rv.visited_at.slice(0, 10) : null
+              const sub = [date, rv.situation, rv.comment].filter(Boolean).join(' · ')
               return (
                 <Box key={rv.id}>
                   {i > 0 && <Divider sx={{ my: 0.5 }} />}
