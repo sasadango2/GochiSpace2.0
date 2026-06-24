@@ -32,12 +32,15 @@ type MapRestaurant = {
   reviews: ReviewSummary[]
 }
 
+type WannaGoUser = { user_id: string; display_name: string }
+
 type WannaGoRestaurant = {
   restaurant_id: string
   restaurant_name: string
   lat: number | string
   lng: number | string
   genre: string | null
+  users: WannaGoUser[]
 }
 
 type MutualFollow = { id: string; display_name: string; username: string }
@@ -226,11 +229,13 @@ function RestaurantMarker({ rs, isWannaGo, onWannaGoToggle, onInvite }: Restaura
 // ── 行きたいマーカー（青ピン） ───────────────────
 type WannaGoMarkerProps = {
   rs: WannaGoRestaurant
+  isMyList: boolean
   onRemove: (restaurantId: string) => void
   onInvite: (restaurantId: string, restaurantName: string) => void
 }
 
-function WannaGoMarker({ rs, onRemove, onInvite }: WannaGoMarkerProps) {
+function WannaGoMarker({ rs, isMyList, onRemove, onInvite }: WannaGoMarkerProps) {
+  const userNames = rs.users.map((u) => u.display_name).join('、')
   return (
     <Marker position={[Number(rs.lat), Number(rs.lng)]} icon={wannaPinIcon}>
       <Popup minWidth={220} maxWidth={280}>
@@ -242,7 +247,7 @@ function WannaGoMarker({ rs, onRemove, onInvite }: WannaGoMarkerProps) {
                   {rs.restaurant_name}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                  行きたい{rs.genre ? ` · ${rs.genre}` : ''}
+                  {rs.genre ? `${rs.genre} · ` : ''}行きたい：{userNames}
                 </Typography>
               </Box>
               <a
@@ -258,9 +263,11 @@ function WannaGoMarker({ rs, onRemove, onInvite }: WannaGoMarkerProps) {
               <button style={popupBtnStyle(false)} onClick={() => onInvite(rs.restaurant_id, rs.restaurant_name)}>
                 ✉ 誘う
               </button>
-              <button style={popupBtnStyle(false)} onClick={() => onRemove(rs.restaurant_id)}>
-                ✕ リストから削除
-              </button>
+              {isMyList && (
+                <button style={popupBtnStyle(false)} onClick={() => onRemove(rs.restaurant_id)}>
+                  ✕ 削除
+                </button>
+              )}
             </Box>
           </Box>
         </Box>
@@ -275,6 +282,7 @@ const apiBase = import.meta.env.VITE_API_BASE_URL as string
 export default function MapPage() {
   const [restaurants, setRestaurants] = useState<MapRestaurant[]>([])
   const [wannaGoRestaurants, setWannaGoRestaurants] = useState<WannaGoRestaurant[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
   const [follows, setFollows] = useState<MutualFollow[]>([])
   const [filterOpen, setFilterOpen] = useState(false)
@@ -327,15 +335,30 @@ export default function MapPage() {
 
   const fetchWannaGo = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user?.id) setCurrentUserId(session.user.id)
     const res = await fetch(`${apiBase}/api/v1/wanna-go/map`, {
       headers: { Authorization: `Bearer ${session?.access_token}` },
     })
     const data = await res.json()
-    setWannaGoRestaurants(
-      Array.isArray(data)
-        ? data.map((rs: WannaGoRestaurant) => ({ ...rs, genre: normalizeGenre(rs.genre) }))
-        : []
-    )
+    if (!Array.isArray(data)) { setWannaGoRestaurants([]); return }
+
+    // レストランごとにユーザーを集約
+    type RawRow = { restaurant_id: string; restaurant_name: string; genre: string | null; lat: number; lng: number; user_id: string; display_name: string }
+    const map = new Map<string, WannaGoRestaurant>()
+    for (const row of data as RawRow[]) {
+      if (!map.has(row.restaurant_id)) {
+        map.set(row.restaurant_id, {
+          restaurant_id: row.restaurant_id,
+          restaurant_name: row.restaurant_name,
+          genre: normalizeGenre(row.genre),
+          lat: row.lat,
+          lng: row.lng,
+          users: [],
+        })
+      }
+      map.get(row.restaurant_id)!.users.push({ user_id: row.user_id, display_name: row.display_name })
+    }
+    setWannaGoRestaurants(Array.from(map.values()))
   }, [])
 
   useEffect(() => {
@@ -367,10 +390,14 @@ export default function MapPage() {
     fetchWannaGo()
   }, [fetchWannaGo])
 
-  // 行きたいIDセット
+  // 自分の行きたいIDセット（トグルボタンの表示に使用）
   const wannaGoIds = useMemo(
-    () => new Set(wannaGoRestaurants.map((wg) => wg.restaurant_id)),
-    [wannaGoRestaurants]
+    () => new Set(
+      wannaGoRestaurants
+        .filter((wg) => wg.users.some((u) => u.user_id === currentUserId))
+        .map((wg) => wg.restaurant_id)
+    ),
+    [wannaGoRestaurants, currentUserId]
   )
 
   // クライアントサイドフィルター
@@ -456,6 +483,7 @@ export default function MapPage() {
           <WannaGoMarker
             key={wg.restaurant_id}
             rs={wg}
+            isMyList={wannaGoIds.has(wg.restaurant_id)}
             onRemove={(id) => toggleWannaGo(id, true)}
             onInvite={(id, name) => setInviteTarget({ restaurantId: id, restaurantName: name })}
           />

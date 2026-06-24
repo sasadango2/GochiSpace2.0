@@ -22,11 +22,21 @@ wannaGo.get('/', async (c) => {
 wannaGo.get('/map', async (c) => {
   const userId = c.get('userId')
   const rows = await sql`
-    SELECT rs.id AS restaurant_id, rs.name AS restaurant_name, rs.genre, rs.lat, rs.lng
+    SELECT rs.id AS restaurant_id, rs.name AS restaurant_name, rs.genre, rs.lat, rs.lng,
+           wg.user_id, p.display_name
     FROM wanna_go wg
     JOIN restaurants rs ON rs.id = wg.restaurant_id
-    WHERE wg.user_id = ${userId}
-      AND rs.lat IS NOT NULL AND rs.lng IS NOT NULL
+    JOIN profiles p ON p.id = wg.user_id
+    WHERE rs.lat IS NOT NULL AND rs.lng IS NOT NULL
+      AND (
+        wg.user_id = ${userId}
+        OR wg.user_id IN (
+          SELECT CASE WHEN from_user_id = ${userId} THEN to_user_id ELSE from_user_id END
+          FROM follow_requests
+          WHERE status = 'accepted'
+            AND (from_user_id = ${userId} OR to_user_id = ${userId})
+        )
+      )
   `
   return c.json(rows)
 })
