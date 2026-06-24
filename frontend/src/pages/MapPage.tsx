@@ -258,7 +258,7 @@ export default function MapPage() {
       <MapContainer center={TOKYO} zoom={13} style={{ height: '100%', width: '100%' }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
         {userLocation && <FlyToLocation position={userLocation} />}
         {userLocation && <Marker position={userLocation} icon={userLocationIcon} />}
