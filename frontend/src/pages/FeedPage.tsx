@@ -39,6 +39,7 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true)
   const [roleFilter, setRoleFilter] = useState<string | null>(null)
   const [situationFilter, setSituationFilter] = useState<string | null>(null)
+  const [genreFilter, setGenreFilter] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const fetchReviews = useCallback(async () => {
@@ -79,6 +80,16 @@ export default function FeedPage() {
     return Array.from(map.values())
   }, [reviews])
 
+  const availableGenres = useMemo(() => {
+    const g = new Set(restaurantGroups.map((rg) => rg.genre).filter((g): g is string => Boolean(g)))
+    return Array.from(g).sort()
+  }, [restaurantGroups])
+
+  const filteredGroups = useMemo(
+    () => genreFilter ? restaurantGroups.filter((rg) => rg.genre === genreFilter) : restaurantGroups,
+    [restaurantGroups, genreFilter],
+  )
+
   const selectedGroup = restaurantGroups.find((g) => g.restaurant_id === selectedId) ?? null
 
   return (
@@ -106,14 +117,28 @@ export default function FeedPage() {
           ))}
         </Box>
 
+        {availableGenres.length > 0 && (
+          <>
+            <Typography variant="caption" color="text.secondary">ジャンルで絞り込み</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2, mt: 0.5 }}>
+              {availableGenres.map((g) => (
+                <Chip key={g} label={g} size="small"
+                  color={genreFilter === g ? 'primary' : 'default'}
+                  onClick={() => toggleFilter(g, genreFilter, setGenreFilter)}
+                />
+              ))}
+            </Box>
+          </>
+        )}
+
         <Divider sx={{ mb: 2 }} />
 
         {loading && <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>}
-        {!loading && restaurantGroups.length === 0 && (
+        {!loading && filteredGroups.length === 0 && (
           <Typography color="text.secondary">レビューがまだありません</Typography>
         )}
 
-        {restaurantGroups.map((group) => (
+        {filteredGroups.map((group) => (
           <Card key={group.restaurant_id} sx={{ mb: 1.5 }}>
             <CardActionArea onClick={() => setSelectedId(group.restaurant_id)}>
               <CardContent>
