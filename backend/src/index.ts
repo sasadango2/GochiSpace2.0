@@ -6,6 +6,8 @@ import { users } from './routes/users.js'
 import { follows } from './routes/follows.js'
 import { restaurants } from './routes/restaurants.js'
 import { reviews } from './routes/reviews.js'
+import { wannaGo } from './routes/wanna-go.js'
+import { notifications } from './routes/notifications.js'
 
 const app = new Hono()
 
@@ -22,6 +24,8 @@ app.route('/api/v1/users', users)
 app.route('/api/v1/follows', follows)
 app.route('/api/v1/restaurants', restaurants)
 app.route('/api/v1/reviews', reviews)
+app.route('/api/v1/wanna-go', wannaGo)
+app.route('/api/v1/notifications', notifications)
 
 const port = Number(process.env.PORT) || 3000
 serve({ fetch: app.fetch, port })

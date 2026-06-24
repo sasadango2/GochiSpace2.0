@@ -11,6 +11,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { supabase } from '../supabase'
 import { ROLES, SITUATIONS, normalizeGenre } from '../constants'
+import WannaGoRequestDialog from '../components/WannaGoRequestDialog'
 
 // ── 型定義 ──────────────────────────────────────
 type ReviewSummary = {
@@ -31,10 +32,19 @@ type MapRestaurant = {
   reviews: ReviewSummary[]
 }
 
+type WannaGoRestaurant = {
+  restaurant_id: string
+  restaurant_name: string
+  lat: number | string
+  lng: number | string
+  genre: string | null
+}
+
 type MutualFollow = { id: string; display_name: string; username: string }
 
 // ── 定数 ────────────────────────────────────────
 const PRIMARY = '#e8651a'
+const WANNA_COLOR = '#3b82f6'
 const TOKYO: [number, number] = [35.6812, 139.7671]
 
 const DISTANCE_OPTIONS: { label: string; value: number | null }[] = [
@@ -82,6 +92,25 @@ function createPinIcon(count: number) {
   })
 }
 
+function createWannaPinIcon() {
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="position:relative;width:36px;height:44px;filter:drop-shadow(0 2px 4px rgba(59,130,246,0.4))">
+        <svg width="36" height="44" viewBox="0 0 36 44" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 0C8.06 0 0 8.06 0 18c0 12.15 18 26 18 26s18-13.85 18-26C36 8.06 27.94 0 18 0z" fill="${WANNA_COLOR}"/>
+          <circle cx="18" cy="18" r="11" fill="white"/>
+        </svg>
+        <span style="position:absolute;top:7px;left:0;width:36px;text-align:center;font-size:14px;line-height:22px;">★</span>
+      </div>`,
+    iconSize: [36, 44],
+    iconAnchor: [18, 44],
+    popupAnchor: [0, -46],
+  })
+}
+
+const wannaPinIcon = createWannaPinIcon()
+
 const userLocationIcon = L.divIcon({
   className: '',
   html: `<div style="width:14px;height:14px;background:#3b82f6;border-radius:50%;border:3px solid white;box-shadow:0 0 0 4px rgba(59,130,246,0.2)"></div>`,
@@ -96,8 +125,27 @@ function FlyToLocation({ position }: { position: [number, number] }) {
   return null
 }
 
-// ── マーカーコンポーネント ───────────────────────
-function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
+// ── ポップアップアクションボタン（インラインstyle） ─────
+const popupBtnStyle = (active: boolean): React.CSSProperties => ({
+  background: active ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)',
+  border: '1px solid rgba(255,255,255,0.5)',
+  borderRadius: 4,
+  color: 'white',
+  fontSize: 11,
+  cursor: 'pointer',
+  padding: '2px 8px',
+  whiteSpace: 'nowrap' as const,
+})
+
+// ── レビューありマーカー ─────────────────────────
+type RestaurantMarkerProps = {
+  rs: MapRestaurant
+  isWannaGo: boolean
+  onWannaGoToggle: (restaurantId: string, currently: boolean) => void
+  onInvite: (restaurantId: string, restaurantName: string) => void
+}
+
+function RestaurantMarker({ rs, isWannaGo, onWannaGoToggle, onInvite }: RestaurantMarkerProps) {
   const icon = useMemo(() => createPinIcon(rs.reviews.length), [rs.reviews.length])
 
   return (
@@ -105,7 +153,7 @@ function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
       <Popup minWidth={240} maxWidth={300}>
         <Box sx={{ display: 'flex', flexDirection: 'column', maxHeight: 280, mx: -1.5, mt: -1.5, mb: -1 }}>
           {/* 固定ヘッダー */}
-          <Box sx={{ bgcolor: PRIMARY, px: 1.5, py: 1, borderRadius: '8px 8px 0 0', flexShrink: 0 }}>
+          <Box sx={{ bgcolor: PRIMARY, px: 1.5, pt: 1, pb: 0.75, borderRadius: '8px 8px 0 0', flexShrink: 0 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'white' }} noWrap>
@@ -124,6 +172,14 @@ function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
                 ルート
               </a>
             </Box>
+            <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+              <button style={popupBtnStyle(isWannaGo)} onClick={() => onWannaGoToggle(rs.restaurant_id, isWannaGo)}>
+                {isWannaGo ? '★ 行きたい済み' : '☆ 行きたい'}
+              </button>
+              <button style={popupBtnStyle(false)} onClick={() => onInvite(rs.restaurant_id, rs.restaurant_name)}>
+                ✉ 誘う
+              </button>
+            </Box>
           </Box>
 
           {/* スクロール可能なレビュー一覧 */}
@@ -134,7 +190,6 @@ function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
               return (
                 <Box key={rv.id}>
                   {i > 0 && <Divider sx={{ my: 0.5 }} />}
-                  {/* 1行目: 名前 + 評価 */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, py: 0.25 }}>
                     <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }} noWrap>
                       {rv.display_name}
@@ -145,13 +200,11 @@ function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
                       </Typography>
                     )}
                   </Box>
-                  {/* 2行目: 訪問日 · シチュエーション */}
                   {(date || rv.situation) && (
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       {[date, rv.situation].filter(Boolean).join(' · ')}
                     </Typography>
                   )}
-                  {/* 3行目: コメント */}
                   {rv.comment && (
                     <Typography variant="caption" color="text.secondary" sx={{
                       display: 'block',
@@ -170,14 +223,62 @@ function RestaurantMarker({ rs }: { rs: MapRestaurant }) {
   )
 }
 
+// ── 行きたいマーカー（青ピン） ───────────────────
+type WannaGoMarkerProps = {
+  rs: WannaGoRestaurant
+  onRemove: (restaurantId: string) => void
+  onInvite: (restaurantId: string, restaurantName: string) => void
+}
+
+function WannaGoMarker({ rs, onRemove, onInvite }: WannaGoMarkerProps) {
+  return (
+    <Marker position={[Number(rs.lat), Number(rs.lng)]} icon={wannaPinIcon}>
+      <Popup minWidth={220} maxWidth={280}>
+        <Box sx={{ mx: -1.5, mt: -1.5, mb: -1 }}>
+          <Box sx={{ bgcolor: WANNA_COLOR, px: 1.5, pt: 1, pb: 0.75, borderRadius: '8px 8px 0 0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'white' }} noWrap>
+                  {rs.restaurant_name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                  行きたい{rs.genre ? ` · ${rs.genre}` : ''}
+                </Typography>
+              </Box>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${rs.lat},${rs.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'white', fontSize: 11, whiteSpace: 'nowrap', textDecoration: 'underline', flexShrink: 0 }}
+              >
+                ルート
+              </a>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <button style={popupBtnStyle(false)} onClick={() => onInvite(rs.restaurant_id, rs.restaurant_name)}>
+                ✉ 誘う
+              </button>
+              <button style={popupBtnStyle(false)} onClick={() => onRemove(rs.restaurant_id)}>
+                ✕ リストから削除
+              </button>
+            </Box>
+          </Box>
+        </Box>
+      </Popup>
+    </Marker>
+  )
+}
+
 // ── メインページ ─────────────────────────────────
 const apiBase = import.meta.env.VITE_API_BASE_URL as string
 
 export default function MapPage() {
   const [restaurants, setRestaurants] = useState<MapRestaurant[]>([])
+  const [wannaGoRestaurants, setWannaGoRestaurants] = useState<WannaGoRestaurant[]>([])
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
   const [follows, setFollows] = useState<MutualFollow[]>([])
   const [filterOpen, setFilterOpen] = useState(false)
+  const [inviteTarget, setInviteTarget] = useState<{ restaurantId: string; restaurantName: string } | null>(null)
 
   // フィルター状態
   const [roleFilter, setRoleFilter] = useState<string | null>(null)
@@ -187,7 +288,6 @@ export default function MapPage() {
   const [targetUserId, setTargetUserId] = useState<string | null>(null)
   const [distanceKm, setDistanceKm] = useState<number | null>(null)
 
-  // 位置情報取得
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
@@ -195,7 +295,6 @@ export default function MapPage() {
     )
   }, [])
 
-  // 相互フォローユーザー取得
   useEffect(() => {
     const fetchFollows = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -208,7 +307,6 @@ export default function MapPage() {
     fetchFollows()
   }, [])
 
-  // マップデータ取得
   const fetchReviews = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
     const params = new URLSearchParams()
@@ -227,13 +325,55 @@ export default function MapPage() {
     )
   }, [roleFilter, situationFilter, onlyMine, targetUserId])
 
+  const fetchWannaGo = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`${apiBase}/api/v1/wanna-go/map`, {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
+    const data = await res.json()
+    setWannaGoRestaurants(
+      Array.isArray(data)
+        ? data.map((rs: WannaGoRestaurant) => ({ ...rs, genre: normalizeGenre(rs.genre) }))
+        : []
+    )
+  }, [])
+
   useEffect(() => {
     fetchReviews()
+    fetchWannaGo()
     window.addEventListener('review-posted', fetchReviews)
-    return () => window.removeEventListener('review-posted', fetchReviews)
-  }, [fetchReviews])
+    window.addEventListener('wanna-go-updated', fetchWannaGo)
+    return () => {
+      window.removeEventListener('review-posted', fetchReviews)
+      window.removeEventListener('wanna-go-updated', fetchWannaGo)
+    }
+  }, [fetchReviews, fetchWannaGo])
 
-  // クライアントサイドフィルター（距離・ジャンル）
+  const toggleWannaGo = useCallback(async (restaurantId: string, currently: boolean) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token ?? ''
+    if (currently) {
+      await fetch(`${apiBase}/api/v1/wanna-go/${restaurantId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    } else {
+      await fetch(`${apiBase}/api/v1/wanna-go`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantId }),
+      })
+    }
+    fetchWannaGo()
+  }, [fetchWannaGo])
+
+  // 行きたいIDセット
+  const wannaGoIds = useMemo(
+    () => new Set(wannaGoRestaurants.map((wg) => wg.restaurant_id)),
+    [wannaGoRestaurants]
+  )
+
+  // クライアントサイドフィルター
   const availableGenres = useMemo(() => {
     const g = new Set(restaurants.map((rs) => rs.genre).filter((g): g is string => Boolean(g)))
     return Array.from(g).sort()
@@ -251,6 +391,18 @@ export default function MapPage() {
     }
     return result
   }, [restaurants, distanceKm, userLocation, genreFilter])
+
+  // レビューある店のIDセット（青ピン除外用）
+  const reviewedIds = useMemo(
+    () => new Set(filteredRestaurants.map((rs) => rs.restaurant_id)),
+    [filteredRestaurants]
+  )
+
+  // 青ピン: 行きたいリストのうちレビューのない店のみ
+  const wannaGoOnlyRestaurants = useMemo(
+    () => wannaGoRestaurants.filter((wg) => !reviewedIds.has(wg.restaurant_id)),
+    [wannaGoRestaurants, reviewedIds]
+  )
 
   const activeCount = [roleFilter, situationFilter, genreFilter, onlyMine || !!targetUserId, distanceKm !== null].filter(Boolean).length
 
@@ -287,8 +439,26 @@ export default function MapPage() {
         />
         {userLocation && <FlyToLocation position={userLocation} />}
         {userLocation && <Marker position={userLocation} icon={userLocationIcon} />}
+
+        {/* オレンジピン: レビューあり */}
         {filteredRestaurants.map((rs) => (
-          <RestaurantMarker key={rs.restaurant_id} rs={rs} />
+          <RestaurantMarker
+            key={`${rs.restaurant_id}-${wannaGoIds.has(rs.restaurant_id)}`}
+            rs={rs}
+            isWannaGo={wannaGoIds.has(rs.restaurant_id)}
+            onWannaGoToggle={toggleWannaGo}
+            onInvite={(id, name) => setInviteTarget({ restaurantId: id, restaurantName: name })}
+          />
+        ))}
+
+        {/* 青ピン: 行きたいリストのみ */}
+        {wannaGoOnlyRestaurants.map((wg) => (
+          <WannaGoMarker
+            key={wg.restaurant_id}
+            rs={wg}
+            onRemove={(id) => toggleWannaGo(id, true)}
+            onInvite={(id, name) => setInviteTarget({ restaurantId: id, restaurantName: name })}
+          />
         ))}
       </MapContainer>
 
@@ -300,13 +470,11 @@ export default function MapPage() {
         slotProps={{ paper: { sx: { borderRadius: '16px 16px 0 0', maxHeight: '78vh' } } }}
       >
         <Box sx={{ p: 2, overflow: 'auto', pb: 3 }}>
-          {/* ヘッダー */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', flex: 1 }}>絞り込み</Typography>
             <IconButton size="small" onClick={() => setFilterOpen(false)}><CloseIcon /></IconButton>
           </Box>
 
-          {/* 表示ユーザー */}
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
             表示するユーザー
           </Typography>
@@ -336,7 +504,6 @@ export default function MapPage() {
             />
           </Box>
 
-          {/* 距離 */}
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
             距離{!userLocation && <span style={{ fontWeight: 'normal' }}> ─ 位置情報を許可すると使えます</span>}
           </Typography>
@@ -353,7 +520,6 @@ export default function MapPage() {
             ))}
           </Box>
 
-          {/* ジャンル */}
           {availableGenres.length > 0 && (
             <>
               <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>ジャンル</Typography>
@@ -371,7 +537,6 @@ export default function MapPage() {
             </>
           )}
 
-          {/* シチュエーション */}
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>シチュエーション</Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2.5 }}>
             {SITUATIONS.map((s) => (
@@ -385,7 +550,6 @@ export default function MapPage() {
             ))}
           </Box>
 
-          {/* ロール */}
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>ロール</Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 3 }}>
             {ROLES.map((r) => (
@@ -399,13 +563,23 @@ export default function MapPage() {
             ))}
           </Box>
 
-          {/* アクション */}
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button variant="outlined" onClick={resetFilters} sx={{ flex: 1 }}>リセット</Button>
             <Button variant="contained" onClick={() => setFilterOpen(false)} sx={{ flex: 1 }}>閉じる</Button>
           </Box>
         </Box>
       </Drawer>
+
+      {/* 誘うダイアログ */}
+      {inviteTarget && (
+        <WannaGoRequestDialog
+          open={!!inviteTarget}
+          restaurantId={inviteTarget.restaurantId}
+          restaurantName={inviteTarget.restaurantName}
+          onClose={() => setInviteTarget(null)}
+          onSent={() => setInviteTarget(null)}
+        />
+      )}
     </Box>
   )
 }
