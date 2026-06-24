@@ -43,6 +43,7 @@ function Layout() {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
   const [wannaGoDialogOpen, setWannaGoDialogOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [displayName, setDisplayName] = useState('')
 
   const currentNav = NAV_ITEMS.findIndex((n) => location.pathname.startsWith(n.path))
 
@@ -59,6 +60,23 @@ function Layout() {
       // ignore
     }
   }
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/users/me`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+        const data = await res.json()
+        setDisplayName(data.display_name || '')
+      } catch {
+        // ignore
+      }
+    }
+    fetchProfile()
+  }, [])
 
   useEffect(() => {
     fetchUnreadCount()
@@ -84,7 +102,12 @@ function Layout() {
           }}
         >
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center' }}>
-            <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold', flex: 1 }}>GochiSpace</Typography>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>GochiSpace</Typography>
+              {displayName && (
+                <Typography variant="caption" color="text.secondary">{displayName}</Typography>
+              )}
+            </Box>
             <IconButton size="small" onClick={() => navigate('/notifications')}>
               <Badge badgeContent={unreadCount || null} color="error">
                 <NotificationsIcon fontSize="small" />
@@ -118,7 +141,12 @@ function Layout() {
             sx={{ bgcolor: 'background.paper', color: 'text.primary', borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}
           >
             <Toolbar variant="dense">
-              <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold', flex: 1 }}>GochiSpace</Typography>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>GochiSpace</Typography>
+                {displayName && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1 }}>{displayName}</Typography>
+                )}
+              </Box>
               <IconButton size="small" onClick={() => navigate('/notifications')}>
                 <Badge badgeContent={unreadCount || null} color="error">
                   <NotificationsIcon />
