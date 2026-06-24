@@ -59,6 +59,14 @@ wannaGo.get('/requests', async (c) => {
 wannaGo.post('/', async (c) => {
   const userId = c.get('userId')
   const { restaurantId } = await c.req.json() as { restaurantId: string }
+
+  const [reviewed] = await sql`
+    SELECT 1 FROM reviews WHERE user_id = ${userId} AND restaurant_id = ${restaurantId}
+  `
+  if (reviewed) {
+    return c.json({ error: { code: 'ALREADY_REVIEWED', message: '行った店は行きたいリストに追加できません' } }, 400)
+  }
+
   await sql`
     INSERT INTO wanna_go (user_id, restaurant_id)
     VALUES (${userId}, ${restaurantId})

@@ -137,29 +137,7 @@ export default function FeedPage() {
     [restaurantGroups, genreFilter],
   )
 
-  const wannaGoIds = useMemo(
-    () => new Set(wannaGoList.map((wg) => wg.restaurant_id)),
-    [wannaGoList]
-  )
-
   const selectedGroup = restaurantGroups.find((g) => g.restaurant_id === selectedId) ?? null
-
-  const toggleWannaGo = async (restaurantId: string) => {
-    const token = await getToken()
-    if (wannaGoIds.has(restaurantId)) {
-      await fetch(`${apiBase}/api/v1/wanna-go/${restaurantId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    } else {
-      await fetch(`${apiBase}/api/v1/wanna-go`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ restaurantId }),
-      })
-    }
-    fetchWannaGo()
-  }
 
   const removeWannaGo = async (restaurantId: string) => {
     const token = await getToken()
@@ -258,15 +236,6 @@ export default function FeedPage() {
                   </CardContent>
                 </CardActionArea>
                 <CardActions sx={{ pt: 0, px: 1.5, pb: 1, gap: 0.5 }}>
-                  <Button
-                    size="small"
-                    variant={wannaGoIds.has(group.restaurant_id) ? 'contained' : 'outlined'}
-                    color={wannaGoIds.has(group.restaurant_id) ? 'primary' : 'inherit'}
-                    sx={{ fontSize: 11, minWidth: 0 }}
-                    onClick={() => toggleWannaGo(group.restaurant_id)}
-                  >
-                    {wannaGoIds.has(group.restaurant_id) ? '★ 行きたい済み' : '☆ 行きたい'}
-                  </Button>
                   <Button
                     size="small"
                     variant="outlined"

@@ -143,12 +143,10 @@ const popupBtnStyle = (active: boolean): React.CSSProperties => ({
 // ── レビューありマーカー ─────────────────────────
 type RestaurantMarkerProps = {
   rs: MapRestaurant
-  isWannaGo: boolean
-  onWannaGoToggle: (restaurantId: string, currently: boolean) => void
   onInvite: (restaurantId: string, restaurantName: string) => void
 }
 
-function RestaurantMarker({ rs, isWannaGo, onWannaGoToggle, onInvite }: RestaurantMarkerProps) {
+function RestaurantMarker({ rs, onInvite }: RestaurantMarkerProps) {
   const icon = useMemo(() => createPinIcon(rs.reviews.length), [rs.reviews.length])
 
   return (
@@ -176,9 +174,6 @@ function RestaurantMarker({ rs, isWannaGo, onWannaGoToggle, onInvite }: Restaura
               </a>
             </Box>
             <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-              <button style={popupBtnStyle(isWannaGo)} onClick={() => onWannaGoToggle(rs.restaurant_id, isWannaGo)}>
-                {isWannaGo ? '★ 行きたい済み' : '☆ 行きたい'}
-              </button>
               <button style={popupBtnStyle(false)} onClick={() => onInvite(rs.restaurant_id, rs.restaurant_name)}>
                 ✉ 誘う
               </button>
@@ -470,10 +465,8 @@ export default function MapPage() {
         {/* オレンジピン: レビューあり */}
         {filteredRestaurants.map((rs) => (
           <RestaurantMarker
-            key={`${rs.restaurant_id}-${wannaGoIds.has(rs.restaurant_id)}`}
+            key={rs.restaurant_id}
             rs={rs}
-            isWannaGo={wannaGoIds.has(rs.restaurant_id)}
-            onWannaGoToggle={toggleWannaGo}
             onInvite={(id, name) => setInviteTarget({ restaurantId: id, restaurantName: name })}
           />
         ))}
