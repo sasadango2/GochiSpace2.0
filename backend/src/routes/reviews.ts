@@ -120,6 +120,9 @@ reviews.post('/', async (c) => {
     VALUES (${userId}, ${restaurantId}, ${rating}, ${comment ?? null}, ${visitedAt ?? null}, ${situation ?? null})
     RETURNING *
   `
+
+  await sql`DELETE FROM wanna_go WHERE user_id = ${userId} AND restaurant_id = ${restaurantId}`
+
   return c.json(created, 201)
 })
 
