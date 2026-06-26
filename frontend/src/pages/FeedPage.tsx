@@ -223,10 +223,7 @@ export default function FeedPage() {
                       {group.reviews.slice(0, 3).map((rv) => {
                         const info = RATING_LABEL[rv.rating]
                         return (
-                          <Box key={rv.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Typography variant="caption" color="text.secondary">{rv.display_name}</Typography>
-                            <Chip label={info.text} color={info.color} size="small" sx={{ height: 18, fontSize: 10 }} />
-                          </Box>
+                          <Chip key={rv.id} label={info.text} color={info.color} size="small" sx={{ height: 18, fontSize: 10 }} />
                         )
                       })}
                       {group.reviews.length > 3 && (
