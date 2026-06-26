@@ -213,7 +213,7 @@ function Layout() {
       </Box>
 
       {/* モバイル: テキスト付きFAB（マップ画面のみ） */}
-      {isMobile && location.pathname.startsWith('/map') && (
+      {isMobile && location.pathname.startsWith('/map') && !reviewDialogOpen && !wannaGoDialogOpen && (
         <Box sx={{ position: 'fixed', bottom: 'calc(72px + env(safe-area-inset-bottom))', right: 16, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end', zIndex: 1400 }}>
           <Fab variant="extended" size="medium" color="primary" onClick={() => setReviewDialogOpen(true)}
             sx={{ boxShadow: 3 }}>
