@@ -210,7 +210,7 @@ function Layout() {
 
       {/* モバイル: テキスト付きFAB */}
       {isMobile && (
-        <Box sx={{ position: 'fixed', bottom: 72, right: 16, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+        <Box sx={{ position: 'fixed', bottom: 72, right: 16, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end', zIndex: 1400 }}>
           <Fab variant="extended" size="medium" color="primary" onClick={() => setReviewDialogOpen(true)}
             sx={{ boxShadow: 3 }}>
             <RateReviewIcon sx={{ mr: 1 }} />
