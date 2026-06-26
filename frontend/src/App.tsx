@@ -197,7 +197,7 @@ function Layout() {
         {/* スマホ: ボトムナビ */}
         {isMobile && (
           <Paper elevation={3} sx={{ flexShrink: 0, paddingBottom: 'env(safe-area-inset-bottom)' }}>
-            <BottomNavigation value={currentNav === -1 ? 0 : currentNav}>
+            <BottomNavigation value={currentNav === -1 ? 0 : currentNav} sx={{ '& .MuiBottomNavigationAction-label': { fontSize: '10px', whiteSpace: 'nowrap' } }}>
               {NAV_ITEMS.map((item) => (
                 <BottomNavigationAction
                   key={item.path}
