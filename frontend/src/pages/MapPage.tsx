@@ -488,6 +488,7 @@ export default function MapPage() {
         anchor="bottom"
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
+        sx={{ zIndex: 1450 }}
         slotProps={{ paper: { sx: { borderRadius: '16px 16px 0 0', maxHeight: '78vh' } } }}
       >
         <Box sx={{ p: 2, overflow: 'auto', pb: 3 }}>

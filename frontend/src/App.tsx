@@ -131,25 +131,29 @@ function Layout() {
               </ListItemButton>
             ))}
           </List>
-          <Divider />
-          <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Button
-              variant="contained"
-              startIcon={<RateReviewIcon />}
-              onClick={() => setReviewDialogOpen(true)}
-              fullWidth
-            >
-              レビュー投稿
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<BookmarkAddIcon />}
-              onClick={() => setWannaGoDialogOpen(true)}
-              fullWidth
-            >
-              行きたい追加
-            </Button>
-          </Box>
+          {location.pathname.startsWith('/map') && (
+            <>
+              <Divider />
+              <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<RateReviewIcon />}
+                  onClick={() => setReviewDialogOpen(true)}
+                  fullWidth
+                >
+                  レビュー投稿
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<BookmarkAddIcon />}
+                  onClick={() => setWannaGoDialogOpen(true)}
+                  fullWidth
+                >
+                  行きたい追加
+                </Button>
+              </Box>
+            </>
+          )}
         </Drawer>
       )}
 
@@ -208,8 +212,8 @@ function Layout() {
         )}
       </Box>
 
-      {/* モバイル: テキスト付きFAB */}
-      {isMobile && (
+      {/* モバイル: テキスト付きFAB（マップ画面のみ） */}
+      {isMobile && location.pathname.startsWith('/map') && (
         <Box sx={{ position: 'fixed', bottom: 'calc(72px + env(safe-area-inset-bottom))', right: 16, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end', zIndex: 1400 }}>
           <Fab variant="extended" size="medium" color="primary" onClick={() => setReviewDialogOpen(true)}
             sx={{ boxShadow: 3 }}>
