@@ -219,17 +219,6 @@ export default function FeedPage() {
                       <Chip label={`${group.reviews.length}件`} size="small" color="primary" variant="outlined" sx={{ flexShrink: 0 }} />
                     </Box>
 
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-                      {group.reviews.slice(0, 3).map((rv) => {
-                        const info = RATING_LABEL[rv.rating]
-                        return (
-                          <Chip key={rv.id} label={info.text} color={info.color} size="small" sx={{ height: 18, fontSize: 10 }} />
-                        )
-                      })}
-                      {group.reviews.length > 3 && (
-                        <Typography variant="caption" color="text.secondary">他{group.reviews.length - 3}件...</Typography>
-                      )}
-                    </Box>
                   </CardContent>
                 </CardActionArea>
                 <CardActions sx={{ pt: 0, px: 1.5, pb: 1, gap: 0.5 }}>
