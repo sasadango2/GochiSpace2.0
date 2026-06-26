@@ -192,7 +192,7 @@ function Layout() {
 
         {/* スマホ: ボトムナビ */}
         {isMobile && (
-          <Paper elevation={3} sx={{ flexShrink: 0 }}>
+          <Paper elevation={3} sx={{ flexShrink: 0, paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <BottomNavigation value={currentNav === -1 ? 0 : currentNav}>
               {NAV_ITEMS.map((item) => (
                 <BottomNavigationAction
@@ -210,7 +210,7 @@ function Layout() {
 
       {/* モバイル: テキスト付きFAB */}
       {isMobile && (
-        <Box sx={{ position: 'fixed', bottom: 72, right: 16, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end', zIndex: 1400 }}>
+        <Box sx={{ position: 'fixed', bottom: 'calc(72px + env(safe-area-inset-bottom))', right: 16, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end', zIndex: 1400 }}>
           <Fab variant="extended" size="medium" color="primary" onClick={() => setReviewDialogOpen(true)}
             sx={{ boxShadow: 3 }}>
             <RateReviewIcon sx={{ mr: 1 }} />
