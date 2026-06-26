@@ -216,12 +216,12 @@ function Layout() {
       {isMobile && location.pathname.startsWith('/map') && !reviewDialogOpen && !wannaGoDialogOpen && (
         <Box sx={{ position: 'fixed', bottom: 'calc(72px + env(safe-area-inset-bottom))', right: 16, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end', zIndex: 1400 }}>
           <Fab variant="extended" size="medium" color="primary" onClick={() => setReviewDialogOpen(true)}
-            sx={{ boxShadow: 3 }}>
+            sx={{ boxShadow: 3, width: 176 }}>
             <RateReviewIcon sx={{ mr: 1 }} />
             飲食店を記録
           </Fab>
           <Fab variant="extended" size="medium" onClick={() => setWannaGoDialogOpen(true)}
-            sx={{ bgcolor: 'white', color: 'primary.main', boxShadow: 3, border: '1px solid', borderColor: 'primary.main', '&:hover': { bgcolor: 'primary.50' } }}>
+            sx={{ bgcolor: 'white', color: 'primary.main', boxShadow: 3, border: '1px solid', borderColor: 'primary.main', '&:hover': { bgcolor: 'primary.50' }, width: 176 }}>
             <BookmarkAddIcon sx={{ mr: 1 }} />
             行きたい店を追加
           </Fab>
