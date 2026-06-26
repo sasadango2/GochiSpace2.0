@@ -141,7 +141,7 @@ function Layout() {
                   onClick={() => setReviewDialogOpen(true)}
                   fullWidth
                 >
-                  レビュー投稿
+                  飲食店を記録
                 </Button>
                 <Button
                   variant="outlined"
@@ -149,7 +149,7 @@ function Layout() {
                   onClick={() => setWannaGoDialogOpen(true)}
                   fullWidth
                 >
-                  行きたい追加
+                  行きたい店を追加
                 </Button>
               </Box>
             </>
@@ -218,12 +218,12 @@ function Layout() {
           <Fab variant="extended" size="medium" color="primary" onClick={() => setReviewDialogOpen(true)}
             sx={{ boxShadow: 3 }}>
             <RateReviewIcon sx={{ mr: 1 }} />
-            レビュー投稿
+            飲食店を記録
           </Fab>
           <Fab variant="extended" size="medium" onClick={() => setWannaGoDialogOpen(true)}
             sx={{ bgcolor: 'white', color: 'primary.main', boxShadow: 3, border: '1px solid', borderColor: 'primary.main', '&:hover': { bgcolor: 'primary.50' } }}>
             <BookmarkAddIcon sx={{ mr: 1 }} />
-            行きたい追加
+            行きたい店を追加
           </Fab>
         </Box>
       )}
