@@ -64,6 +64,5 @@
 - [x] DBスキーマ設計（テーブル定義）
 - [x] API設計（エンドポイント一覧）
 - [x] Docker構成（docker-compose.yml の設計）
-- [ ] ホットペッパーAPIの利用登録・キー取得
 - [ ] デプロイ戦略（Render vs Railway）
 - [ ] restaurants テーブルに photo_url カラムを追加するか（ホットペッパー photo.pc.m）
