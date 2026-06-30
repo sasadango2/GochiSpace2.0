@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   Box, Typography, CircularProgress, Chip, Divider,
   Card, CardActionArea, CardContent, CardActions, Drawer, IconButton, Button,
-  Tabs, Tab,
+  Tabs, Tab, Modal,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import DirectionsIcon from '@mui/icons-material/Directions'
@@ -24,6 +24,7 @@ type Review = {
   situation?: string
   comment?: string
   visited_at?: string
+  photo_urls?: string[] | null
 }
 
 type RestaurantGroup = {
@@ -67,6 +68,7 @@ export default function FeedPage() {
   const [situationFilter, setSituationFilter] = useState<string | null>(null)
   const [genreFilter, setGenreFilter] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
   const [inviteTarget, setInviteTarget] = useState<{ restaurantId: string; restaurantName: string } | null>(null)
 
   const fetchReviews = useCallback(async () => {
@@ -363,6 +365,19 @@ export default function FeedPage() {
                     {rv.comment && (
                       <Typography variant="body2" color="text.secondary">{rv.comment}</Typography>
                     )}
+                    {rv.photo_urls && rv.photo_urls.length > 0 && (
+                      <Box sx={{ display: 'flex', gap: 1, mt: 1, overflowX: 'auto' }}>
+                        {rv.photo_urls.map((src, pi) => (
+                          <Box
+                            key={pi}
+                            component="img"
+                            src={src}
+                            onClick={() => setLightboxSrc(src)}
+                            sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1, flexShrink: 0, cursor: 'pointer' }}
+                          />
+                        ))}
+                      </Box>
+                    )}
                   </Box>
                 </Box>
               )
@@ -370,6 +385,26 @@ export default function FeedPage() {
           </Box>
         )}
       </Drawer>
+
+      {/* 画像ライトボックス */}
+      <Modal open={!!lightboxSrc} onClose={() => setLightboxSrc(null)}>
+        <Box
+          onClick={() => setLightboxSrc(null)}
+          sx={{
+            position: 'fixed', inset: 0,
+            bgcolor: 'rgba(0,0,0,0.85)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {lightboxSrc && (
+            <Box
+              component="img"
+              src={lightboxSrc}
+              sx={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 1 }}
+            />
+          )}
+        </Box>
+      </Modal>
 
       {/* 誘うダイアログ */}
       {inviteTarget && (
