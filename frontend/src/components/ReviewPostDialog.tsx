@@ -1,14 +1,18 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, List, ListItemButton, ListItemText,
   ToggleButtonGroup, ToggleButton, Typography, Box, CircularProgress,
-  useTheme, useMediaQuery,
+  IconButton, useTheme, useMediaQuery,
 } from '@mui/material'
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'
+import CloseIcon from '@mui/icons-material/Close'
 import { supabase } from '../supabase'
+import { compressImage } from '../utils/compressImage'
 import { SITUATIONS, GENRES } from '../constants'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
+const MAX_IMAGES = 3
 
 type Restaurant = {
   id: string
@@ -36,9 +40,26 @@ async function getToken(): Promise<string> {
   return data.session?.access_token ?? ''
 }
 
+async function uploadImages(userId: string, files: File[]): Promise<string[]> {
+  const urls: string[] = []
+  for (let i = 0; i < files.length; i++) {
+    const compressed = await compressImage(files[i])
+    const ext = files[i].name.split('.').pop() ?? 'jpg'
+    const path = `${userId}/${Date.now()}-${i}.${ext}`
+    const { error } = await supabase.storage.from('review-photos').upload(path, compressed)
+    if (!error) {
+      const { data } = supabase.storage.from('review-photos').getPublicUrl(path)
+      urls.push(data.publicUrl)
+    }
+  }
+  return urls
+}
+
 export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [step, setStep] = useState<1 | 2>(1)
   const [keyword, setKeyword] = useState('')
   const [results, setResults] = useState<Restaurant[]>([])
@@ -48,6 +69,8 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
   const [genre, setGenre] = useState<string | null>(null)
   const [comment, setComment] = useState('')
   const [visitedAt, setVisitedAt] = useState('')
+  const [images, setImages] = useState<File[]>([])
+  const [previews, setPreviews] = useState<string[]>([])
   const [searching, setSearching] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -69,11 +92,32 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
     setStep(2)
   }
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    const remaining = MAX_IMAGES - images.length
+    const added = files.slice(0, remaining)
+    setImages((prev) => [...prev, ...added])
+    setPreviews((prev) => [...prev, ...added.map((f) => URL.createObjectURL(f))])
+    e.target.value = ''
+  }
+
+  const removeImage = (index: number) => {
+    URL.revokeObjectURL(previews[index])
+    setImages((prev) => prev.filter((_, i) => i !== index))
+    setPreviews((prev) => prev.filter((_, i) => i !== index))
+  }
+
   const canSubmit = !!(rating && genre && situation && visitedAt)
 
   const handleSubmit = async () => {
     if (!selected || !canSubmit) return
     setSubmitting(true)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    const photoUrls = user && images.length > 0
+      ? await uploadImages(user.id, images)
+      : []
+
     const token = await getToken()
     await fetch(`${API_BASE}/api/v1/reviews`, {
       method: 'POST',
@@ -85,6 +129,7 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
         comment: comment || undefined,
         visitedAt: visitedAt || undefined,
         genre: genre || undefined,
+        photoUrls: photoUrls.length > 0 ? photoUrls : undefined,
       }),
     })
     setSubmitting(false)
@@ -102,6 +147,9 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
     setGenre(null)
     setComment('')
     setVisitedAt('')
+    previews.forEach((url) => URL.revokeObjectURL(url))
+    setImages([])
+    setPreviews([])
     onClose()
   }
 
@@ -204,6 +252,57 @@ export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) 
               slotProps={{ inputLabel: { shrink: true } }}
               fullWidth
             />
+
+            {/* 画像アップロード */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                写真（任意・最大{MAX_IMAGES}枚）
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {previews.map((src, i) => (
+                  <Box key={i} sx={{ position: 'relative', width: 80, height: 80 }}>
+                    <Box
+                      component="img"
+                      src={src}
+                      sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1 }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => removeImage(i)}
+                      sx={{
+                        position: 'absolute', top: -8, right: -8,
+                        bgcolor: 'background.paper', p: 0.25,
+                        border: '1px solid', borderColor: 'divider',
+                      }}
+                    >
+                      <CloseIcon fontSize="inherit" />
+                    </IconButton>
+                  </Box>
+                ))}
+                {images.length < MAX_IMAGES && (
+                  <Box
+                    onClick={() => fileInputRef.current?.click()}
+                    sx={{
+                      width: 80, height: 80, border: '1px dashed',
+                      borderColor: 'divider', borderRadius: 1,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', color: 'text.secondary',
+                      '&:hover': { bgcolor: 'action.hover' },
+                    }}
+                  >
+                    <AddPhotoAlternateIcon />
+                  </Box>
+                )}
+              </Box>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+                onChange={handleImageChange}
+              />
+            </Box>
           </Box>
         )}
       </DialogContent>

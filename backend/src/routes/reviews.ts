@@ -102,22 +102,25 @@ reviews.get('/map', async (c) => {
 
 reviews.post('/', async (c) => {
   const userId = c.get('userId')
-  const { restaurantId, rating, comment, visitedAt, situation, genre } = await c.req.json() as {
+  const { restaurantId, rating, comment, visitedAt, situation, genre, photoUrls } = await c.req.json() as {
     restaurantId: string
     rating: string
     comment?: string
     visitedAt?: string
     situation?: string
     genre?: string
+    photoUrls?: string[]
   }
 
   if (genre) {
     await sql`UPDATE restaurants SET genre = ${genre} WHERE id = ${restaurantId}`
   }
 
+  const urls = photoUrls && photoUrls.length > 0 ? photoUrls : null
+
   const [created] = await sql`
-    INSERT INTO reviews (user_id, restaurant_id, rating, comment, visited_at, situation)
-    VALUES (${userId}, ${restaurantId}, ${rating}, ${comment ?? null}, ${visitedAt ?? null}, ${situation ?? null})
+    INSERT INTO reviews (user_id, restaurant_id, rating, comment, visited_at, situation, photo_urls)
+    VALUES (${userId}, ${restaurantId}, ${rating}, ${comment ?? null}, ${visitedAt ?? null}, ${situation ?? null}, ${urls})
     RETURNING *
   `
 
@@ -145,12 +148,15 @@ reviews.get('/:id', async (c) => {
 reviews.put('/:id', async (c) => {
   const userId = c.get('userId')
   const { id } = c.req.param()
-  const { rating, comment, visitedAt, situation } = await c.req.json() as {
+  const { rating, comment, visitedAt, situation, photoUrls } = await c.req.json() as {
     rating?: string
     comment?: string
     visitedAt?: string
     situation?: string
+    photoUrls?: string[]
   }
+
+  const urls = photoUrls && photoUrls.length > 0 ? photoUrls : null
 
   const [updated] = await sql`
     UPDATE reviews SET
@@ -158,6 +164,7 @@ reviews.put('/:id', async (c) => {
       comment = COALESCE(${comment ?? null}, comment),
       visited_at = COALESCE(${visitedAt ?? null}, visited_at),
       situation = COALESCE(${situation ?? null}, situation),
+      photo_urls = COALESCE(${urls}, photo_urls),
       updated_at = NOW()
     WHERE id = ${id} AND user_id = ${userId}
     RETURNING *
