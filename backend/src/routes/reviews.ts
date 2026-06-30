@@ -87,7 +87,8 @@ reviews.get('/map', async (c) => {
         'situation', r.situation,
         'comment', r.comment,
         'display_name', p.display_name,
-        'visited_at', r.visited_at
+        'visited_at', r.visited_at,
+        'photo_urls', r.photo_urls
       ) ORDER BY r.created_at DESC) AS reviews
     FROM reviews r
     JOIN profiles p ON p.id = r.user_id

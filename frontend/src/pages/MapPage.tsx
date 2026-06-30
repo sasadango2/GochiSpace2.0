@@ -21,6 +21,7 @@ type ReviewSummary = {
   comment: string | null
   display_name: string
   visited_at: string | null
+  photo_urls: string[] | null
 }
 
 type MapRestaurant = {
@@ -210,6 +211,18 @@ function RestaurantMarker({ rs, onInvite }: RestaurantMarkerProps) {
                     }}>
                       {rv.comment}
                     </Typography>
+                  )}
+                  {rv.photo_urls && rv.photo_urls.length > 0 && (
+                    <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, overflowX: 'auto' }}>
+                      {rv.photo_urls.map((src, pi) => (
+                        <Box
+                          key={pi}
+                          component="img"
+                          src={src}
+                          sx={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 0.5, flexShrink: 0 }}
+                        />
+                      ))}
+                    </Box>
                   )}
                 </Box>
               )
