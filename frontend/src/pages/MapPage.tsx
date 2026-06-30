@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import {
   Box, Typography, Chip, Divider, Drawer, IconButton, Badge, Paper,
   FormControl, InputLabel, Select, MenuItem, Switch, FormControlLabel,
-  Button,
+  Button, Modal,
 } from '@mui/material'
 import TuneIcon from '@mui/icons-material/Tune'
 import CloseIcon from '@mui/icons-material/Close'
@@ -145,9 +145,10 @@ const popupBtnStyle = (active: boolean): React.CSSProperties => ({
 type RestaurantMarkerProps = {
   rs: MapRestaurant
   onInvite: (restaurantId: string, restaurantName: string) => void
+  onImageClick: (src: string) => void
 }
 
-function RestaurantMarker({ rs, onInvite }: RestaurantMarkerProps) {
+function RestaurantMarker({ rs, onInvite, onImageClick }: RestaurantMarkerProps) {
   const icon = useMemo(() => createPinIcon(rs.reviews.length), [rs.reviews.length])
 
   return (
@@ -219,7 +220,8 @@ function RestaurantMarker({ rs, onInvite }: RestaurantMarkerProps) {
                           key={pi}
                           component="img"
                           src={src}
-                          sx={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 0.5, flexShrink: 0 }}
+                          onClick={() => onImageClick(src)}
+                          sx={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 0.5, flexShrink: 0, cursor: 'pointer' }}
                         />
                       ))}
                     </Box>
@@ -294,6 +296,7 @@ export default function MapPage() {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
   const [follows, setFollows] = useState<MutualFollow[]>([])
   const [filterOpen, setFilterOpen] = useState(false)
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
   const [inviteTarget, setInviteTarget] = useState<{ restaurantId: string; restaurantName: string } | null>(null)
 
   // フィルター状態
@@ -481,6 +484,7 @@ export default function MapPage() {
             key={rs.restaurant_id}
             rs={rs}
             onInvite={(id, name) => setInviteTarget({ restaurantId: id, restaurantName: name })}
+            onImageClick={(src) => setLightboxSrc(src)}
           />
         ))}
 
@@ -604,6 +608,26 @@ export default function MapPage() {
           </Box>
         </Box>
       </Drawer>
+
+      {/* 画像ライトボックス */}
+      <Modal open={!!lightboxSrc} onClose={() => setLightboxSrc(null)} sx={{ zIndex: 1500 }}>
+        <Box
+          onClick={() => setLightboxSrc(null)}
+          sx={{
+            position: 'fixed', inset: 0,
+            bgcolor: 'rgba(0,0,0,0.85)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {lightboxSrc && (
+            <Box
+              component="img"
+              src={lightboxSrc}
+              sx={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 1 }}
+            />
+          )}
+        </Box>
+      </Modal>
 
       {/* 誘うダイアログ */}
       {inviteTarget && (
