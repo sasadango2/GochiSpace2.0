@@ -3,7 +3,7 @@ import {
   Box, Typography, CircularProgress, Chip, Divider,
   Card, CardActionArea, CardContent, CardActions, Drawer, IconButton, Button,
   Tabs, Tab, Modal,
-  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
+  Dialog, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import DirectionsIcon from '@mui/icons-material/Directions'
@@ -441,7 +441,6 @@ export default function FeedPage() {
 
       {/* 削除確認ダイアログ */}
       <Dialog open={!!confirmDialog} onClose={() => setConfirmDialog(null)}>
-        <DialogTitle>確認</DialogTitle>
         <DialogContent>
           <DialogContentText>{confirmDialog?.message}</DialogContentText>
         </DialogContent>
