@@ -3,6 +3,7 @@ import {
   Box, Typography, CircularProgress, Chip, Divider,
   Card, CardActionArea, CardContent, CardActions, Drawer, IconButton, Button,
   Tabs, Tab, Modal,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import DirectionsIcon from '@mui/icons-material/Directions'
@@ -72,6 +73,7 @@ export default function FeedPage() {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
   const [inviteTarget, setInviteTarget] = useState<{ restaurantId: string; restaurantName: string } | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null)
 
   const fetchReviews = useCallback(async () => {
     setLoading(true)
@@ -313,7 +315,10 @@ export default function FeedPage() {
                   <IconButton
                     size="small"
                     color="default"
-                    onClick={() => removeWannaGo(wg.restaurant_id)}
+                    onClick={() => setConfirmDialog({
+                      message: '行きたいリストから削除しますか？',
+                      onConfirm: () => removeWannaGo(wg.restaurant_id),
+                    })}
                   >
                     <DeleteOutlineIcon fontSize="small" />
                   </IconButton>
@@ -376,7 +381,10 @@ export default function FeedPage() {
                       {rv.user_id === currentUserId && (
                         <IconButton
                           size="small"
-                          onClick={() => deleteReview(rv.id, rv.restaurant_id)}
+                          onClick={() => setConfirmDialog({
+                            message: '投稿したレビューを削除しますか？',
+                            onConfirm: () => deleteReview(rv.id, rv.restaurant_id),
+                          })}
                           sx={{ color: 'text.secondary' }}
                         >
                           <DeleteOutlineIcon fontSize="small" />
@@ -430,6 +438,26 @@ export default function FeedPage() {
           )}
         </Box>
       </Modal>
+
+      {/* 削除確認ダイアログ */}
+      <Dialog open={!!confirmDialog} onClose={() => setConfirmDialog(null)}>
+        <DialogTitle>確認</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{confirmDialog?.message}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialog(null)}>いいえ</Button>
+          <Button
+            color="error"
+            onClick={() => {
+              confirmDialog?.onConfirm()
+              setConfirmDialog(null)
+            }}
+          >
+            はい
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* 誘うダイアログ */}
       {inviteTarget && (
