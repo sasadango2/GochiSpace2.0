@@ -14,6 +14,7 @@ import WannaGoRequestDialog from '../components/WannaGoRequestDialog'
 
 type Review = {
   id: string
+  user_id: string
   restaurant_id: string
   display_name: string
   restaurant_name: string
@@ -70,6 +71,7 @@ export default function FeedPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
   const [inviteTarget, setInviteTarget] = useState<{ restaurantId: string; restaurantName: string } | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   const fetchReviews = useCallback(async () => {
     setLoading(true)
@@ -98,6 +100,7 @@ export default function FeedPage() {
   }, [])
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null))
     fetchReviews()
     fetchWannaGo()
     window.addEventListener('review-posted', fetchReviews)
@@ -148,6 +151,19 @@ export default function FeedPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
     fetchWannaGo()
+  }
+
+  const deleteReview = async (reviewId: string, restaurantId: string) => {
+    const token = await getToken()
+    await fetch(`${apiBase}/api/v1/reviews/${reviewId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    await fetchReviews()
+    const remainingForRestaurant = reviews.filter(
+      (r) => r.restaurant_id === restaurantId && r.id !== reviewId,
+    )
+    if (remainingForRestaurant.length === 0) setSelectedId(null)
   }
 
   return (
@@ -356,6 +372,15 @@ export default function FeedPage() {
                         <Typography variant="caption" color="text.secondary">
                           {rv.visited_at.slice(0, 10)}
                         </Typography>
+                      )}
+                      {rv.user_id === currentUserId && (
+                        <IconButton
+                          size="small"
+                          onClick={() => deleteReview(rv.id, rv.restaurant_id)}
+                          sx={{ color: 'text.secondary' }}
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
                       )}
                     </Box>
                     <Box sx={{ display: 'flex', gap: 0.5, mb: 0.75, flexWrap: 'wrap' }}>
