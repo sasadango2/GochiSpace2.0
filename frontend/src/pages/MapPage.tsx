@@ -239,12 +239,10 @@ function RestaurantMarker({ rs, onInvite, onImageClick }: RestaurantMarkerProps)
 // ── 行きたいマーカー（青ピン） ───────────────────
 type WannaGoMarkerProps = {
   rs: WannaGoRestaurant
-  isMyList: boolean
-  onRemove: (restaurantId: string) => void
   onInvite: (restaurantId: string, restaurantName: string) => void
 }
 
-function WannaGoMarker({ rs, isMyList, onRemove, onInvite }: WannaGoMarkerProps) {
+function WannaGoMarker({ rs, onInvite }: WannaGoMarkerProps) {
   const userNames = rs.users.map((u) => u.display_name).join('、')
   return (
     <Marker position={[Number(rs.lat), Number(rs.lng)]} icon={wannaPinIcon}>
@@ -273,11 +271,6 @@ function WannaGoMarker({ rs, isMyList, onRemove, onInvite }: WannaGoMarkerProps)
               <button style={popupBtnStyle(false)} onClick={() => onInvite(rs.restaurant_id, rs.restaurant_name)}>
                 ✉ 誘う
               </button>
-              {isMyList && (
-                <button style={popupBtnStyle(false)} onClick={() => onRemove(rs.restaurant_id)}>
-                  ✕ 削除
-                </button>
-              )}
             </Box>
           </Box>
         </Box>
@@ -292,7 +285,6 @@ const apiBase = import.meta.env.VITE_API_BASE_URL as string
 export default function MapPage() {
   const [restaurants, setRestaurants] = useState<MapRestaurant[]>([])
   const [wannaGoRestaurants, setWannaGoRestaurants] = useState<WannaGoRestaurant[]>([])
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
   const [follows, setFollows] = useState<MutualFollow[]>([])
   const [filterOpen, setFilterOpen] = useState(false)
@@ -346,7 +338,6 @@ export default function MapPage() {
 
   const fetchWannaGo = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user?.id) setCurrentUserId(session.user.id)
     const res = await fetch(`${apiBase}/api/v1/wanna-go/map`, {
       headers: { Authorization: `Bearer ${session?.access_token}` },
     })
@@ -382,34 +373,6 @@ export default function MapPage() {
       window.removeEventListener('wanna-go-updated', fetchWannaGo)
     }
   }, [fetchReviews, fetchWannaGo])
-
-  const toggleWannaGo = useCallback(async (restaurantId: string, currently: boolean) => {
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token ?? ''
-    if (currently) {
-      await fetch(`${apiBase}/api/v1/wanna-go/${restaurantId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    } else {
-      await fetch(`${apiBase}/api/v1/wanna-go`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ restaurantId }),
-      })
-    }
-    fetchWannaGo()
-  }, [fetchWannaGo])
-
-  // 自分の行きたいIDセット（トグルボタンの表示に使用）
-  const wannaGoIds = useMemo(
-    () => new Set(
-      wannaGoRestaurants
-        .filter((wg) => wg.users.some((u) => u.user_id === currentUserId))
-        .map((wg) => wg.restaurant_id)
-    ),
-    [wannaGoRestaurants, currentUserId]
-  )
 
   // クライアントサイドフィルター
   const availableGenres = useMemo(() => {
@@ -493,8 +456,6 @@ export default function MapPage() {
           <WannaGoMarker
             key={wg.restaurant_id}
             rs={wg}
-            isMyList={wannaGoIds.has(wg.restaurant_id)}
-            onRemove={(id) => toggleWannaGo(id, true)}
             onInvite={(id, name) => setInviteTarget({ restaurantId: id, restaurantName: name })}
           />
         ))}
