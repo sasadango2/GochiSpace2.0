@@ -30,15 +30,16 @@ export default function LoginPage() {
   return (
     <Box
       sx={{
-        minHeight: '100dvh',
+        height: '100%',
+        overflowY: 'auto',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
         px: 2,
+        py: 4,
+        boxSizing: 'border-box',
         background: 'linear-gradient(160deg, #fff7f0 0%, #ffe8d6 50%, #ffd9bd 100%)',
       }}
     >
-      <Box sx={{ width: '100%', maxWidth: 400 }}>
+      <Box sx={{ width: '100%', maxWidth: 400, m: 'auto' }}>
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Box
             sx={{

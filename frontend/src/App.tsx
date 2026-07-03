@@ -106,7 +106,7 @@ function Layout() {
   }, [location.pathname])
 
   return (
-    <Box sx={{ display: 'flex', height: '100dvh', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       {/* PC: サイドバー */}
       {!isMobile && (
         <Drawer
