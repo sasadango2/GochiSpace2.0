@@ -12,6 +12,7 @@ import PeopleIcon from '@mui/icons-material/People'
 import RateReviewIcon from '@mui/icons-material/RateReview'
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd'
 import NotificationsIcon from '@mui/icons-material/Notifications'
+import RestaurantIcon from '@mui/icons-material/Restaurant'
 
 import { useState, useEffect } from 'react'
 import AuthGuard from './components/AuthGuard'
@@ -28,6 +29,25 @@ import { supabase } from './supabase'
 
 const DRAWER_WIDTH = 240
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
+
+function BrandMark({ size = 32 }: { size?: number }) {
+  return (
+    <Box
+      sx={{
+        width: size,
+        height: size,
+        borderRadius: `${size * 0.3}px`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        background: 'linear-gradient(135deg, #ff8a4d 0%, #e8651a 100%)',
+      }}
+    >
+      <RestaurantIcon sx={{ color: '#fff', fontSize: size * 0.6 }} />
+    </Box>
+  )
+}
 
 const NAV_ITEMS = [
   { path: '/map', label: 'マップ', icon: <MapIcon /> },
@@ -104,11 +124,12 @@ function Layout() {
             },
           }}
         >
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center' }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>GochiSpace</Typography>
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <BrandMark size={36} />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="h6" color="primary" sx={{ lineHeight: 1.2 }}>GochiSpace</Typography>
               {displayName && (
-                <Typography variant="caption" color="text.secondary">{displayName}</Typography>
+                <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>{displayName}</Typography>
               )}
             </Box>
             <IconButton size="small" onClick={() => navigate('/notifications')}>
@@ -166,11 +187,12 @@ function Layout() {
             elevation={0}
             sx={{ bgcolor: 'background.paper', color: 'text.primary', borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}
           >
-            <Toolbar variant="dense">
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>GochiSpace</Typography>
+            <Toolbar variant="dense" sx={{ gap: 1.25 }}>
+              <BrandMark size={30} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" color="primary" sx={{ lineHeight: 1.2 }}>GochiSpace</Typography>
                 {displayName && (
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1 }}>{displayName}</Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', lineHeight: 1 }}>{displayName}</Typography>
                 )}
               </Box>
               <IconButton size="small" onClick={() => navigate('/notifications')}>
