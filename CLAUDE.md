@@ -21,7 +21,7 @@
 - **React Router v7** - ルーティング
 - **Material-UI (MUI) v7** - UIコンポーネント
 - **Leaflet.js + OpenStreetMap** - 地図表示（完全無料）
-- **ホットペッパーグルメAPI** - 店舗検索（無料）
+- **Google Places API（New）** - 店舗検索（Text Search・無料枠内で運用）
 
 ### バックエンド（Docker で管理）
 - **Node.js + Hono + TypeScript**
@@ -65,4 +65,4 @@
 - [x] API設計（エンドポイント一覧）
 - [x] Docker構成（docker-compose.yml の設計）
 - [ ] デプロイ戦略（Render vs Railway）
-- [ ] restaurants テーブルに photo_url カラムを追加するか（ホットペッパー photo.pc.m）
+- [x] restaurants テーブルに photo_url カラムを追加するか → 追加済み（Google Places の photo を使用）

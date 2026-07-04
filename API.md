@@ -38,7 +38,7 @@
 
 | メソッド | パス | 説明 |
 |---|---|---|
-| `GET` | `/restaurants/search?q=:keyword` | ホットペッパーAPI経由で検索・キャッシュ保存 |
+| `GET` | `/restaurants/search?q=:keyword` | Google Places API（New）経由で検索・キャッシュ保存 |
 | `GET` | `/restaurants/:id` | 店舗詳細（DBキャッシュから返す） |
 
 ### レビュー
@@ -121,13 +121,13 @@
 [
   {
     "id": "uuid",
-    "hotpepperId": "J001234567",
+    "place_id": "ChIJN1t_tDeuEmsR...",
     "name": "ラーメン○○",
     "address": "東京都渋谷区...",
     "lat": 35.681236,
     "lng": 139.767125,
     "genre": "ラーメン",
-    "hotpepperUrl": "https://..."
+    "photo_url": "https://places.googleapis.com/v1/places/.../media?maxWidthPx=400&key=..."
   }
 ]
 ```

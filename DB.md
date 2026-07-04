@@ -8,7 +8,7 @@
 | `genres` | ジャンルマスタ |
 | `user_genre_preferences` | 嗜好設定（ユーザーごとに最大3件） |
 | `follow_requests` | フォロー申請・承認管理（相互フォロー） |
-| `restaurants` | ホットペッパーAPI店舗キャッシュ |
+| `restaurants` | Google Places API（New）店舗キャッシュ |
 | `reviews` | レビュー |
 
 ---
@@ -70,15 +70,14 @@
 | カラム | 型 | 制約 | 備考 |
 |---|---|---|---|
 | `id` | UUID | PK | |
-| `hotpepper_id` | VARCHAR(50) | UNIQUE NOT NULL | ホットペッパーのID |
+| `place_id` | VARCHAR(255) | UNIQUE NOT NULL | Google Places のプレイスID |
 | `name` | VARCHAR(200) | NOT NULL | |
 | `address` | TEXT | | |
 | `lat` | DECIMAL(9,6) | | マップ表示用 |
 | `lng` | DECIMAL(9,6) | | マップ表示用 |
-| `genre` | VARCHAR(100) | | |
-| `hotpepper_url` | TEXT | | |
+| `genre` | VARCHAR(100) | | Places の types から日本語ジャンルへ変換 |
+| `photo_url` | TEXT | | Google Places の photo（maxWidthPx=400） |
 | `cached_at` | TIMESTAMPTZ | DEFAULT NOW() | |
-| `photo_url` | TEXT | | 未決定。ホットペッパー photo.pc.m を想定 |
 
 ---
 
@@ -100,7 +99,7 @@
 ## 設計方針
 
 - フォロー：申請→承認で相互フォロー成立（`follow_requests` 1レコードで状態管理）
-- 店舗データ：ホットペッパーAPIの結果をDBにキャッシュ（`hotpepper_id` で一意管理）
+- 店舗データ：Google Places API（New）の検索結果をDBにキャッシュ（`place_id` で一意管理）
 - レビュー評価：ラベル方式（`want_to_revisit` / `average` / `not_good`）
 - レビュー閲覧権限：相互フォロワー限定（アプリ側クエリで制御、DB制約なし）
 
