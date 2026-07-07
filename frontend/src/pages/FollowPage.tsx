@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Box, Typography, TextField, Button, List, ListItem, ListItemText,
-  Divider, Select, MenuItem, FormControl, IconButton,
+  ListItemButton, Divider, Select, MenuItem, FormControl, IconButton,
   Dialog, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material'
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove'
@@ -19,6 +20,7 @@ async function getToken() {
 }
 
 export default function FollowPage() {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Follow[]>([])
   const [followers, setFollowers] = useState<Follow[]>([])
@@ -182,7 +184,7 @@ export default function FollowPage() {
       {followers.length === 0 && <Typography color="text.secondary">フォロワーはいません</Typography>}
       <List>
         {followers.map((f) => (
-          <ListItem key={f.id} secondaryAction={
+          <ListItem key={f.id} disablePadding secondaryAction={
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <FormControl size="small" sx={{ minWidth: 110 }}>
                 <Select
@@ -207,7 +209,12 @@ export default function FollowPage() {
               </IconButton>
             </Box>
           }>
-            <ListItemText primary={f.display_name} secondary={`@${f.username}`} />
+            <ListItemButton
+              onClick={() => navigate(`/follows/${f.id}`, { state: { displayName: f.display_name } })}
+              sx={{ pr: '170px' }}
+            >
+              <ListItemText primary={f.display_name} secondary={`@${f.username}`} />
+            </ListItemButton>
           </ListItem>
         ))}
       </List>

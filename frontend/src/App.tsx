@@ -24,6 +24,7 @@ import MapPage from './pages/MapPage'
 import FeedPage from './pages/FeedPage'
 import ProfilePage from './pages/ProfilePage'
 import FollowPage from './pages/FollowPage'
+import UserReviewsPage from './pages/UserReviewsPage'
 import NotificationPage from './pages/NotificationPage'
 import { supabase } from './supabase'
 
@@ -211,6 +212,7 @@ function Layout() {
             <Route path="/feed" element={<FeedPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/follows" element={<FollowPage />} />
+            <Route path="/follows/:userId" element={<UserReviewsPage />} />
             <Route path="/notifications" element={<NotificationPage />} />
             <Route path="*" element={<Navigate to="/map" />} />
           </Routes>
