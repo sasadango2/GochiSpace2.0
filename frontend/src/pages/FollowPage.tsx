@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import {
   Box, Typography, TextField, Button, List, ListItem, ListItemText,
-  Divider, Select, MenuItem, FormControl,
+  Divider, Select, MenuItem, FormControl, IconButton,
+  Dialog, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material'
+import PersonRemoveIcon from '@mui/icons-material/PersonRemove'
 import { supabase } from '../supabase'
 import { ROLES } from '../constants'
 
@@ -21,6 +23,7 @@ export default function FollowPage() {
   const [searchResults, setSearchResults] = useState<Follow[]>([])
   const [followers, setFollowers] = useState<Follow[]>([])
   const [received, setReceived] = useState<Request[]>([])
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,6 +76,15 @@ export default function FollowPage() {
       body: JSON.stringify({ role }),
     })
     setFollowers((prev) => prev.map((f) => f.follow_id === followId ? { ...f, role } : f))
+  }
+
+  const removeFollow = async (followId: string) => {
+    const token = await getToken()
+    await fetch(`${apiBase}/api/v1/follows/${followId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    setFollowers((prev) => prev.filter((f) => f.follow_id !== followId))
   }
 
   return (
@@ -129,21 +141,52 @@ export default function FollowPage() {
       <List>
         {followers.map((f) => (
           <ListItem key={f.id} secondaryAction={
-            <FormControl size="small" sx={{ minWidth: 110 }}>
-              <Select
-                value={f.role ?? ''}
-                displayEmpty
-                onChange={(e) => updateRole(f.follow_id, e.target.value || null)}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <FormControl size="small" sx={{ minWidth: 110 }}>
+                <Select
+                  value={f.role ?? ''}
+                  displayEmpty
+                  onChange={(e) => updateRole(f.follow_id, e.target.value || null)}
+                >
+                  <MenuItem value=""><em>ロールなし</em></MenuItem>
+                  {ROLES.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+                </Select>
+              </FormControl>
+              <IconButton
+                size="small"
+                color="error"
+                aria-label="フォロー解除"
+                onClick={() => setConfirmDialog({
+                  message: `${f.display_name}さんとの相互フォローを解除しますか？`,
+                  onConfirm: () => removeFollow(f.follow_id),
+                })}
               >
-                <MenuItem value=""><em>ロールなし</em></MenuItem>
-                {ROLES.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
-              </Select>
-            </FormControl>
+                <PersonRemoveIcon fontSize="small" />
+              </IconButton>
+            </Box>
           }>
             <ListItemText primary={f.display_name} secondary={`@${f.username}`} />
           </ListItem>
         ))}
       </List>
+
+      <Dialog open={!!confirmDialog} onClose={() => setConfirmDialog(null)}>
+        <DialogContent>
+          <DialogContentText>{confirmDialog?.message}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialog(null)}>いいえ</Button>
+          <Button
+            color="error"
+            onClick={() => {
+              confirmDialog?.onConfirm()
+              setConfirmDialog(null)
+            }}
+          >
+            はい
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
     </Box>
   )
