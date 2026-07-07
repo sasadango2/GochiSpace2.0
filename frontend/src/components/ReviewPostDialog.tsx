@@ -8,7 +8,7 @@ import {
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'
 import CloseIcon from '@mui/icons-material/Close'
 import { supabase } from '../supabase'
-import { compressImage } from '../utils/compressImage'
+import { uploadImages } from '../utils/uploadImages'
 import { SITUATIONS, GENRES } from '../constants'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
@@ -38,21 +38,6 @@ const RATINGS: { value: RatingType; label: string }[] = [
 async function getToken(): Promise<string> {
   const { data } = await supabase.auth.getSession()
   return data.session?.access_token ?? ''
-}
-
-async function uploadImages(userId: string, files: File[]): Promise<string[]> {
-  const urls: string[] = []
-  for (let i = 0; i < files.length; i++) {
-    const compressed = await compressImage(files[i])
-    const ext = files[i].name.split('.').pop() ?? 'jpg'
-    const path = `${userId}/${Date.now()}-${i}.${ext}`
-    const { error } = await supabase.storage.from('review-photos').upload(path, compressed)
-    if (!error) {
-      const { data } = supabase.storage.from('review-photos').getPublicUrl(path)
-      urls.push(data.publicUrl)
-    }
-  }
-  return urls
 }
 
 export default function ReviewPostDialog({ open, onClose, onSubmitted }: Props) {

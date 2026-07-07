@@ -157,7 +157,13 @@ reviews.put('/:id', async (c) => {
     photoUrls?: string[]
   }
 
-  const urls = photoUrls && photoUrls.length > 0 ? photoUrls : null
+  // photoUrls は「指定なし＝維持」「空配列＝全削除」を区別するため COALESCE を使わない
+  if (photoUrls !== undefined) {
+    await sql`
+      UPDATE reviews SET photo_urls = ${photoUrls.length > 0 ? photoUrls : null}
+      WHERE id = ${id} AND user_id = ${userId}
+    `
+  }
 
   const [updated] = await sql`
     UPDATE reviews SET
@@ -165,7 +171,6 @@ reviews.put('/:id', async (c) => {
       comment = COALESCE(${comment ?? null}, comment),
       visited_at = COALESCE(${visitedAt ?? null}, visited_at),
       situation = COALESCE(${situation ?? null}, situation),
-      photo_urls = COALESCE(${urls}, photo_urls),
       updated_at = NOW()
     WHERE id = ${id} AND user_id = ${userId}
     RETURNING *

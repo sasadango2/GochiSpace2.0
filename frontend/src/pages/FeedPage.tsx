@@ -9,9 +9,11 @@ import CloseIcon from '@mui/icons-material/Close'
 import DirectionsIcon from '@mui/icons-material/Directions'
 import SendIcon from '@mui/icons-material/Send'
 import DeleteOutlineIcon from '@mui/icons-material/Delete'
+import EditIcon from '@mui/icons-material/Edit'
 import { supabase } from '../supabase'
 import { ROLES, SITUATIONS, normalizeGenre } from '../constants'
 import WannaGoRequestDialog from '../components/WannaGoRequestDialog'
+import ReviewEditDialog from '../components/ReviewEditDialog'
 
 type Review = {
   id: string
@@ -74,6 +76,7 @@ export default function FeedPage() {
   const [inviteTarget, setInviteTarget] = useState<{ restaurantId: string; restaurantName: string } | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null)
+  const [editTarget, setEditTarget] = useState<Review | null>(null)
 
   const fetchReviews = useCallback(async () => {
     setLoading(true)
@@ -379,16 +382,25 @@ export default function FeedPage() {
                         </Typography>
                       )}
                       {rv.user_id === currentUserId && (
-                        <IconButton
-                          size="small"
-                          onClick={() => setConfirmDialog({
-                            message: '投稿したレビューを削除しますか？',
-                            onConfirm: () => deleteReview(rv.id, rv.restaurant_id),
-                          })}
-                          sx={{ color: 'text.secondary' }}
-                        >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
+                        <>
+                          <IconButton
+                            size="small"
+                            onClick={() => setEditTarget(rv)}
+                            sx={{ color: 'text.secondary' }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => setConfirmDialog({
+                              message: '投稿したレビューを削除しますか？',
+                              onConfirm: () => deleteReview(rv.id, rv.restaurant_id),
+                            })}
+                            sx={{ color: 'text.secondary' }}
+                          >
+                            <DeleteOutlineIcon fontSize="small" />
+                          </IconButton>
+                        </>
                       )}
                     </Box>
                     <Box sx={{ display: 'flex', gap: 0.5, mb: 0.75, flexWrap: 'wrap' }}>
@@ -457,6 +469,19 @@ export default function FeedPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* レビュー編集ダイアログ */}
+      {editTarget && (
+        <ReviewEditDialog
+          open={!!editTarget}
+          review={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => {
+            setEditTarget(null)
+            fetchReviews()
+          }}
+        />
+      )}
 
       {/* 誘うダイアログ */}
       {inviteTarget && (
