@@ -23,18 +23,22 @@ export default function FollowPage() {
   const [searchResults, setSearchResults] = useState<Follow[]>([])
   const [followers, setFollowers] = useState<Follow[]>([])
   const [received, setReceived] = useState<Request[]>([])
+  const [sent, setSent] = useState<Request[]>([])
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
       const token = await getToken()
       const headers = { Authorization: `Bearer ${token}` }
-      const [followersRes, receivedRes] = await Promise.all([
+      const [followersRes, receivedRes, sentRes] = await Promise.all([
         fetch(`${apiBase}/api/v1/follows`, { headers }),
         fetch(`${apiBase}/api/v1/follows/requests/received`, { headers }),
+        fetch(`${apiBase}/api/v1/follows/requests/sent`, { headers }),
       ])
       setFollowers(await followersRes.json())
       setReceived(await receivedRes.json())
+      const sentRows = await sentRes.json() as Request[]
+      setSent(sentRows.filter((r) => r.status === 'pending'))
     }
     fetchData()
   }, [])
@@ -47,15 +51,28 @@ export default function FollowPage() {
     setSearchResults(await res.json())
   }
 
-  const sendRequest = async (toUserId: string) => {
+  const sendRequest = async (user: Follow) => {
     const token = await getToken()
-    await fetch(`${apiBase}/api/v1/follows/requests`, {
+    const res = await fetch(`${apiBase}/api/v1/follows/requests`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ toUserId }),
+      body: JSON.stringify({ toUserId: user.id }),
     })
+    const created = await res.json().catch(() => null) as { id: string } | null
+    if (created?.id) {
+      setSent((prev) => [...prev, { id: created.id, username: user.username, display_name: user.display_name, status: 'pending' }])
+    }
     setSearchResults([])
     setSearchQuery('')
+  }
+
+  const cancelRequest = async (id: string) => {
+    const token = await getToken()
+    await fetch(`${apiBase}/api/v1/follows/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    setSent((prev) => prev.filter((r) => r.id !== id))
   }
 
   const respondRequest = async (id: string, status: 'accepted' | 'rejected') => {
@@ -108,7 +125,7 @@ export default function FollowPage() {
         <List sx={{ mb: 3 }}>
           {searchResults.map((u) => (
             <ListItem key={u.id} secondaryAction={
-              <Button size="small" variant="outlined" onClick={() => sendRequest(u.id)}>申請</Button>
+              <Button size="small" variant="outlined" onClick={() => sendRequest(u)}>申請</Button>
             }>
               <ListItemText primary={u.display_name} secondary={`@${u.username}`} />
             </ListItem>
@@ -129,6 +146,31 @@ export default function FollowPage() {
                 </Box>
               }>
                 <ListItemText primary={r.display_name} secondary={`@${r.username}`} />
+              </ListItem>
+            ))}
+          </List>
+        </>
+      )}
+
+      {sent.length > 0 && (
+        <>
+          <Divider sx={{ mb: 2 }} />
+          <Typography variant="subtitle1" sx={{ mb: 1 }}>送信した申請（{sent.length}件）</Typography>
+          <List sx={{ mb: 3 }}>
+            {sent.map((r) => (
+              <ListItem key={r.id} secondaryAction={
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={() => setConfirmDialog({
+                    message: `${r.display_name}さんへのフォロー申請を取り消しますか？`,
+                    onConfirm: () => cancelRequest(r.id),
+                  })}
+                >
+                  取消
+                </Button>
+              }>
+                <ListItemText primary={r.display_name} secondary={`@${r.username} ・ 承認待ち`} />
               </ListItem>
             ))}
           </List>
