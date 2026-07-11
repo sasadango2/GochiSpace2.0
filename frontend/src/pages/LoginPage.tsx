@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Box, Button, TextField, Typography, Tabs, Tab, Alert, Paper } from '@mui/material'
 import RestaurantIcon from '@mui/icons-material/Restaurant'
 import { supabase } from '../supabase'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const [tab, setTab] = useState(0)
+  const location = useLocation()
+  const initialTab = (location.state as { tab?: number } | null)?.tab ?? 0
+  const [tab, setTab] = useState(initialTab)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

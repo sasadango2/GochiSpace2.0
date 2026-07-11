@@ -18,6 +18,7 @@ import { useState, useEffect } from 'react'
 import AuthGuard from './components/AuthGuard'
 import ReviewPostDialog from './components/ReviewPostDialog'
 import WannaGoAddDialog from './components/WannaGoAddDialog'
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import OnboardingPage from './pages/OnboardingPage'
 import MapPage from './pages/MapPage'
@@ -276,6 +277,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/welcome" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/*" element={<AuthGuard><Layout /></AuthGuard>} />

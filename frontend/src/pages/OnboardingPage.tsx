@@ -4,13 +4,10 @@ import {
   Box, Button, Container, TextField, Typography, Alert, Chip,
   Stepper, Step, StepLabel, List, ListItem, ListItemText,
 } from '@mui/material'
-import PeopleIcon from '@mui/icons-material/People'
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser'
-import MapIcon from '@mui/icons-material/Map'
 import { supabase } from '../supabase'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
-const STEPS = ['ようこそ', 'プロフィール', '好み', '友達']
+const STEPS = ['プロフィール', '好み', '友達']
 
 type Genre = { id: number; name: string }
 type SearchUser = { id: string; username: string; display_name: string }
@@ -18,32 +15,6 @@ type SearchUser = { id: string; username: string; display_name: string }
 async function getToken(): Promise<string> {
   const { data } = await supabase.auth.getSession()
   return data.session?.access_token ?? ''
-}
-
-function WelcomeStep({ onNext }: { onNext: () => void }) {
-  const items = [
-    { icon: <VerifiedUserIcon color="primary" />, title: 'サクラのいないレビュー', text: '知らない誰かではなく、信頼できる人のレビューだけが集まります' },
-    { icon: <PeopleIcon color="primary" />, title: '相互フォローで共有', text: 'お互いに承認し合った相手とだけレビューを共有するクローズドな設計です' },
-    { icon: <MapIcon color="primary" />, title: 'マップで発見', text: 'みんなのおすすめを地図上で見ながら、次に行くお店を選べます' },
-  ]
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h5" sx={{ fontWeight: 'bold' }}>GochiSpace へようこそ</Typography>
-      <Typography variant="body2" color="text.secondary">
-        美味しい発見を、信頼できる人とシェアするサービスです。
-      </Typography>
-      {items.map((item) => (
-        <Box key={item.title} sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-          {item.icon}
-          <Box>
-            <Typography variant="subtitle2">{item.title}</Typography>
-            <Typography variant="body2" color="text.secondary">{item.text}</Typography>
-          </Box>
-        </Box>
-      ))}
-      <Button variant="contained" size="large" onClick={onNext} sx={{ mt: 1 }}>次へ</Button>
-    </Box>
-  )
 }
 
 function ProfileStep({ onNext }: { onNext: () => void }) {
@@ -249,10 +220,9 @@ export default function OnboardingPage() {
             </Step>
           ))}
         </Stepper>
-        {activeStep === 0 && <WelcomeStep onNext={goNext} />}
-        {activeStep === 1 && <ProfileStep onNext={goNext} />}
-        {activeStep === 2 && <GenresStep onNext={goNext} />}
-        {activeStep === 3 && <FollowStep onFinish={finish} />}
+        {activeStep === 0 && <ProfileStep onNext={goNext} />}
+        {activeStep === 1 && <GenresStep onNext={goNext} />}
+        {activeStep === 2 && <FollowStep onFinish={finish} />}
       </Box>
     </Container>
   )
