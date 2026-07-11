@@ -247,7 +247,7 @@ export default function LandingPage() {
             次の「美味しい」を、大切な人と。
           </Typography>
           <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)', mb: 2 }}>
-            完全無料で使えます
+            完全無料ではじめられます。
           </Typography>
           <Button
             fullWidth
@@ -262,7 +262,7 @@ export default function LandingPage() {
               '&:hover': { bgcolor: '#fff7f0' },
             }}
           >
-            無料ではじめる
+            はじめる
           </Button>
           <Button
             fullWidth
