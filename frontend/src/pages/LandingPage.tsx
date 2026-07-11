@@ -17,13 +17,13 @@ const FEATURES = [
   },
   {
     icon: <PeopleIcon />,
-    title: 'クローズドな共有',
+    title: 'クローズドな環境を提供',
     text: '承認し合った家族・友人とだけ。知らない人には見えません',
   },
   {
     icon: <MapIcon />,
     title: 'マップで発見',
-    text: 'みんなの「また行きたい」を地図で眺めて、次のお店を選べます',
+    text: 'みんなの「また行きたい」、「気になる」を地図で眺めて、次のお店を選べます',
   },
 ]
 
@@ -137,9 +137,9 @@ export default function LandingPage() {
             variant="h4"
             sx={{ fontWeight: 800, lineHeight: 1.35, mb: 1.5, letterSpacing: '-0.01em' }}
           >
-            知らない誰かの星より、
+            知らない誰かより、
             <Box component="span" sx={{ color: 'primary.main' }}>
-              大切な人の「美味しい」
+              身近な人の「美味しい」
             </Box>
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8 }}>
@@ -167,7 +167,7 @@ export default function LandingPage() {
               boxShadow: '0 8px 24px rgba(232, 101, 26, 0.35)',
             }}
           >
-            無料ではじめる
+            はじめる
           </Button>
           <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
             メールアドレスだけで登録できます
