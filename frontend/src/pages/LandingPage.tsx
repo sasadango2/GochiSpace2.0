@@ -68,9 +68,9 @@ function MockReviewCard() {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 1.5 }}>
-          <Avatar sx={{ width: 36, height: 36, bgcolor: '#ffb27d', fontSize: 15 }}>妹</Avatar>
+          <Avatar sx={{ width: 36, height: 36, bgcolor: '#ffb27d', fontSize: 15 }}>母</Avatar>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>ゆい</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>みゆ</Typography>
             <Typography variant="caption" color="text.secondary">家族 ・ 昨日</Typography>
           </Box>
           <Chip label="また行きたい" color="success" size="small" />
@@ -85,7 +85,7 @@ function MockReviewCard() {
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5 }}>
           <FavoriteIcon sx={{ fontSize: 15, color: '#e8651a' }} />
-          <Typography variant="caption" color="text.secondary">お母さん・たろうが「行きたい」しています</Typography>
+          <Typography variant="caption" color="text.secondary">お父さん・たろうが「行きたい」しています</Typography>
         </Box>
       </Paper>
     </Box>
