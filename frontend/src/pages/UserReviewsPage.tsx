@@ -2,11 +2,20 @@ import { useEffect, useState } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Box, Typography, CircularProgress, Chip, Card, CardContent,
-  IconButton, Modal,
+  IconButton, Modal, Avatar,
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import { supabase } from '../supabase'
 import { normalizeGenre } from '../constants'
+
+type UserProfile = {
+  id: string
+  username: string
+  display_name: string
+  avatar_url: string | null
+  genres: { id: number; name: string }[]
+  review_count: number
+}
 
 type UserReview = {
   id: string
@@ -33,25 +42,29 @@ export default function UserReviewsPage() {
   const navigate = useNavigate()
   const displayName = (location.state as { displayName?: string } | null)?.displayName ?? ''
 
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [reviews, setReviews] = useState<UserReview[]>([])
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchUserReviews = async () => {
+    const fetchUserData = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch(`${apiBase}/api/v1/reviews/user/${userId}`, {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-      })
-      if (res.status === 403) {
+      const headers = { Authorization: `Bearer ${session?.access_token}` }
+      const [profileRes, reviewsRes] = await Promise.all([
+        fetch(`${apiBase}/api/v1/users/${userId}`, { headers }),
+        fetch(`${apiBase}/api/v1/reviews/user/${userId}`, { headers }),
+      ])
+      if (reviewsRes.status === 403) {
         setForbidden(true)
       } else {
-        setReviews(await res.json())
+        if (profileRes.ok) setProfile(await profileRes.json())
+        setReviews(await reviewsRes.json())
       }
       setLoading(false)
     }
-    fetchUserReviews()
+    fetchUserData()
   }, [userId])
 
   return (
@@ -62,11 +75,41 @@ export default function UserReviewsPage() {
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h6">
-            {displayName ? `${displayName}さんのレビュー` : 'レビュー一覧'}
+            {(profile?.display_name ?? displayName) ? `${profile?.display_name ?? displayName}さんのレビュー` : 'レビュー一覧'}
           </Typography>
         </Box>
 
         {loading && <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>}
+
+        {!loading && !forbidden && profile && (
+          <Card sx={{ mb: 2 }}>
+            <CardContent sx={{ pb: '16px !important' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar src={profile.avatar_url ?? undefined} sx={{ width: 56, height: 56 }}>
+                  {profile.display_name.charAt(0)}
+                </Avatar>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }} noWrap>
+                    {profile.display_name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    @{profile.username} ・ レビュー {profile.review_count}件
+                  </Typography>
+                </Box>
+              </Box>
+              {profile.genres.length > 0 && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5, flexWrap: 'wrap' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ mr: 0.5 }}>
+                    好きなジャンル:
+                  </Typography>
+                  {profile.genres.map((g) => (
+                    <Chip key={g.id} label={g.name} size="small" variant="outlined" color="primary" />
+                  ))}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        )}
         {!loading && forbidden && (
           <Typography color="text.secondary">相互フォローのユーザーのみ閲覧できます</Typography>
         )}

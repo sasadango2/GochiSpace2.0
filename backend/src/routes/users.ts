@@ -91,4 +91,40 @@ users.put('/me/genres', async (c) => {
   return c.json(rows)
 })
 
+// 動的ルートは静的ルート（/me, /search 等）より後に定義する
+users.get('/:userId', async (c) => {
+  const currentUserId = c.get('userId')
+  const { userId } = c.req.param()
+
+  if (currentUserId !== userId) {
+    const [isMutual] = await sql`
+      SELECT 1 FROM follow_requests
+      WHERE status = 'accepted'
+        AND (
+          (from_user_id = ${currentUserId} AND to_user_id = ${userId}) OR
+          (to_user_id = ${currentUserId} AND from_user_id = ${userId})
+        )
+    `
+    if (!isMutual) {
+      return c.json({ error: { code: 'FORBIDDEN', message: '閲覧権限がありません' } }, 403)
+    }
+  }
+
+  const [profile] = await sql`
+    SELECT id, username, display_name, avatar_url FROM profiles WHERE id = ${userId}
+  `
+  if (!profile) return c.json({ error: { code: 'NOT_FOUND', message: 'プロフィールが見つかりません' } }, 404)
+
+  const genres = await sql`
+    SELECT g.id, g.name FROM user_genre_preferences ugp
+    JOIN genres g ON g.id = ugp.genre_id
+    WHERE ugp.user_id = ${userId}
+  `
+  const [{ count }] = await sql`
+    SELECT COUNT(*)::int AS count FROM reviews WHERE user_id = ${userId}
+  `
+
+  return c.json({ ...profile, genres, review_count: count })
+})
+
 export { users }
