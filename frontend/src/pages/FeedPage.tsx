@@ -407,7 +407,7 @@ export default function FeedPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                       <Typography
                         variant="body2"
-                        onClick={() => navigate(`/follows/${rv.user_id}`, { state: { displayName: rv.display_name } })}
+                        onClick={() => { if (rv.user_id) navigate(`/follows/${rv.user_id}`, { state: { displayName: rv.display_name } }) }}
                         sx={{
                           fontWeight: 'bold', flex: 1, cursor: 'pointer',
                           textDecoration: 'underline', textUnderlineOffset: 3, textDecorationColor: 'rgba(0,0,0,0.25)',

@@ -196,7 +196,7 @@ function RestaurantMarker({ rs, onInvite, onImageClick }: RestaurantMarkerProps)
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, py: 0.25 }}>
                     <Typography
                       variant="caption"
-                      onClick={() => navigate(`/follows/${rv.user_id}`, { state: { displayName: rv.display_name } })}
+                      onClick={() => { if (rv.user_id) navigate(`/follows/${rv.user_id}`, { state: { displayName: rv.display_name } }) }}
                       sx={{
                         fontWeight: 'bold', flex: 1, cursor: 'pointer',
                         textDecoration: 'underline', textUnderlineOffset: 3, textDecorationColor: 'rgba(0,0,0,0.25)',
