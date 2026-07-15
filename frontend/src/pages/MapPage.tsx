@@ -485,6 +485,7 @@ export default function MapPage() {
                 value={targetUserId ?? ''}
                 label="ユーザー"
                 onChange={(e) => setTargetUserId(e.target.value || null)}
+                MenuProps={{ sx: { zIndex: 1600 } }}
               >
                 <MenuItem value="">全員</MenuItem>
                 {follows.map((f) => (
