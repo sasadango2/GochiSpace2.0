@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Box, Typography, CircularProgress, Chip, Divider,
   Card, CardActionArea, CardContent, CardActions, Drawer, IconButton, Button,
@@ -73,6 +74,7 @@ async function getToken(): Promise<string> {
 }
 
 export default function FeedPage() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<0 | 1>(0)
   const [groups, setGroups] = useState<RestaurantGroup[]>([])
   const [hasMore, setHasMore] = useState(false)
@@ -403,7 +405,16 @@ export default function FeedPage() {
                   {i > 0 && <Divider />}
                   <Box sx={{ px: 2, py: 1.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 'bold', flex: 1 }}>{rv.display_name}</Typography>
+                      <Typography
+                        variant="body2"
+                        onClick={() => navigate(`/follows/${rv.user_id}`, { state: { displayName: rv.display_name } })}
+                        sx={{
+                          fontWeight: 'bold', flex: 1, cursor: 'pointer',
+                          textDecoration: 'underline', textUnderlineOffset: 3, textDecorationColor: 'rgba(0,0,0,0.25)',
+                        }}
+                      >
+                        {rv.display_name}
+                      </Typography>
                       {rv.visited_at && (
                         <Typography variant="caption" color="text.secondary">
                           {rv.visited_at.slice(0, 10)}

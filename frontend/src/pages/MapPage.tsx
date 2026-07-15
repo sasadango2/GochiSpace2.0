@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import {
   Box, Typography, Chip, Divider, Drawer, IconButton, Badge, Paper,
@@ -16,6 +17,7 @@ import WannaGoRequestDialog from '../components/WannaGoRequestDialog'
 // ── 型定義 ──────────────────────────────────────
 type ReviewSummary = {
   id: string
+  user_id: string
   rating: string
   situation: string | null
   comment: string | null
@@ -149,6 +151,7 @@ type RestaurantMarkerProps = {
 }
 
 function RestaurantMarker({ rs, onInvite, onImageClick }: RestaurantMarkerProps) {
+  const navigate = useNavigate()
   const icon = useMemo(() => createPinIcon(rs.reviews.length), [rs.reviews.length])
 
   return (
@@ -191,7 +194,15 @@ function RestaurantMarker({ rs, onInvite, onImageClick }: RestaurantMarkerProps)
                 <Box key={rv.id}>
                   {i > 0 && <Divider sx={{ my: 0.5 }} />}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, py: 0.25 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }} noWrap>
+                    <Typography
+                      variant="caption"
+                      onClick={() => navigate(`/follows/${rv.user_id}`, { state: { displayName: rv.display_name } })}
+                      sx={{
+                        fontWeight: 'bold', flex: 1, cursor: 'pointer',
+                        textDecoration: 'underline', textUnderlineOffset: 3, textDecorationColor: 'rgba(0,0,0,0.25)',
+                      }}
+                      noWrap
+                    >
                       {rv.display_name}
                     </Typography>
                     {info && (

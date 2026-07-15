@@ -74,6 +74,7 @@ reviews.get('/map', async (c) => {
       rs.genre,
       json_agg(json_build_object(
         'id', r.id,
+        'user_id', r.user_id,
         'rating', r.rating,
         'situation', r.situation,
         'comment', r.comment,

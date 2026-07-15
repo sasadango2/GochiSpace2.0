@@ -71,7 +71,7 @@ export default function UserReviewsPage() {
     <Box sx={{ height: '100%', overflow: 'auto' }}>
       <Box sx={{ maxWidth: 600, mx: 'auto', px: 2, pt: 2, pb: 10 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <IconButton size="small" onClick={() => navigate('/follows')}>
+          <IconButton size="small" onClick={() => navigate(-1)}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h6">
