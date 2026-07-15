@@ -5,14 +5,14 @@ import {
   AppBar, Toolbar, Typography, useTheme, useMediaQuery,
   Fab, Badge, IconButton, Button, Divider,
 } from '@mui/material'
-import MapIcon from '@mui/icons-material/Map'
-import ListIcon from '@mui/icons-material/List'
-import PersonIcon from '@mui/icons-material/Person'
-import PeopleIcon from '@mui/icons-material/People'
-import RateReviewIcon from '@mui/icons-material/RateReview'
-import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd'
-import NotificationsIcon from '@mui/icons-material/Notifications'
-import RestaurantIcon from '@mui/icons-material/Restaurant'
+import ExploreRoundedIcon from '@mui/icons-material/ExploreRounded'
+import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded'
+import Diversity3RoundedIcon from '@mui/icons-material/Diversity3Rounded'
+import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded'
+import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded'
+import BookmarkAddRoundedIcon from '@mui/icons-material/BookmarkAddRounded'
+import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded'
+import RestaurantRoundedIcon from '@mui/icons-material/RestaurantRounded'
 
 import { useState, useEffect } from 'react'
 import AuthGuard from './components/AuthGuard'
@@ -44,18 +44,19 @@ function BrandMark({ size = 32 }: { size?: number }) {
         justifyContent: 'center',
         flexShrink: 0,
         background: 'linear-gradient(135deg, #ff8a4d 0%, #e8651a 100%)',
+        boxShadow: '0 4px 10px rgba(232, 101, 26, 0.35), inset 0 1.5px 0 rgba(255, 255, 255, 0.4)',
       }}
     >
-      <RestaurantIcon sx={{ color: '#fff', fontSize: size * 0.6 }} />
+      <RestaurantRoundedIcon sx={{ color: '#fff', fontSize: size * 0.6 }} />
     </Box>
   )
 }
 
 const NAV_ITEMS = [
-  { path: '/map', label: 'マップ', icon: <MapIcon /> },
-  { path: '/feed', label: 'フィード', icon: <ListIcon /> },
-  { path: '/follows', label: 'フォロー', icon: <PeopleIcon /> },
-  { path: '/profile', label: 'プロフィール', icon: <PersonIcon /> },
+  { path: '/map', label: 'マップ', icon: <ExploreRoundedIcon /> },
+  { path: '/feed', label: 'フィード', icon: <RestaurantMenuRoundedIcon /> },
+  { path: '/follows', label: 'フォロー', icon: <Diversity3RoundedIcon /> },
+  { path: '/profile', label: 'プロフィール', icon: <AccountCircleRoundedIcon /> },
 ]
 
 function Layout() {
@@ -136,7 +137,7 @@ function Layout() {
             </Box>
             <IconButton size="small" onClick={() => navigate('/notifications')}>
               <Badge badgeContent={unreadCount || null} color="error">
-                <NotificationsIcon fontSize="small" />
+                <NotificationsRoundedIcon fontSize="small" />
               </Badge>
             </IconButton>
           </Box>
@@ -160,7 +161,7 @@ function Layout() {
               <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Button
                   variant="contained"
-                  startIcon={<RateReviewIcon />}
+                  startIcon={<RateReviewRoundedIcon />}
                   onClick={() => setReviewDialogOpen(true)}
                   fullWidth
                 >
@@ -168,7 +169,7 @@ function Layout() {
                 </Button>
                 <Button
                   variant="outlined"
-                  startIcon={<BookmarkAddIcon />}
+                  startIcon={<BookmarkAddRoundedIcon />}
                   onClick={() => setWannaGoDialogOpen(true)}
                   fullWidth
                 >
@@ -199,7 +200,7 @@ function Layout() {
               </Box>
               <IconButton size="small" onClick={() => navigate('/notifications')}>
                 <Badge badgeContent={unreadCount || null} color="error">
-                  <NotificationsIcon />
+                  <NotificationsRoundedIcon />
                 </Badge>
               </IconButton>
             </Toolbar>
@@ -242,12 +243,12 @@ function Layout() {
         <Box sx={{ position: 'fixed', bottom: 'calc(72px + env(safe-area-inset-bottom))', right: 16, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end', zIndex: 1400 }}>
           <Fab variant="extended" size="medium" color="primary" onClick={() => setReviewDialogOpen(true)}
             sx={{ boxShadow: 3, width: 176 }}>
-            <RateReviewIcon sx={{ mr: 1 }} />
+            <RateReviewRoundedIcon sx={{ mr: 1 }} />
             飲食店を記録
           </Fab>
           <Fab variant="extended" size="medium" onClick={() => setWannaGoDialogOpen(true)}
             sx={{ bgcolor: 'white', color: 'primary.main', boxShadow: 3, border: '1px solid', borderColor: 'primary.main', '&:hover': { bgcolor: 'primary.50' }, width: 176 }}>
-            <BookmarkAddIcon sx={{ mr: 1 }} />
+            <BookmarkAddRoundedIcon sx={{ mr: 1 }} />
             行きたい店を追加
           </Fab>
         </Box>
