@@ -31,6 +31,14 @@ export function normalizeGenre(genre: string | null | undefined): string | null 
   return GENRE_EN_TO_JA[genre] ?? genre
 }
 
+// 日本語ジャンル名から、DBに保存されうる生の値（英語のPlacesタイプ＋日本語名）を逆引きする
+export function genreToRawValues(ja: string): string[] {
+  const enKeys = Object.entries(GENRE_EN_TO_JA)
+    .filter(([, v]) => v === ja)
+    .map(([k]) => k)
+  return [...enKeys, ja]
+}
+
 export const GENRES = [
   'ラーメン', 'イタリアン', '中華', '焼肉', '寿司',
   '和食', 'カフェ', 'バー', 'フレンチ', 'タイ料理',

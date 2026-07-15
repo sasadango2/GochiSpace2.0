@@ -10,38 +10,29 @@ reviews.use('*', authMiddleware)
 const buildUserCondition = (userId: string, onlyMine: boolean, targetUserId: string | null, roleFilter: string | null) => {
   if (onlyMine) return sql`r.user_id = ${userId}`
   if (targetUserId) {
-    return sql`r.user_id = ${targetUserId} AND (
-      SELECT COUNT(*) FROM follow_requests
+    return sql`r.user_id = ${targetUserId} AND EXISTS (
+      SELECT 1 FROM follow_requests
       WHERE status = 'accepted'
         AND (
           (from_user_id = ${userId} AND to_user_id = ${targetUserId}) OR
           (to_user_id = ${userId} AND from_user_id = ${targetUserId})
         )
-    ) > 0`
+    )`
   }
   return sql`(r.user_id = ${userId} OR ${buildFollowCondition(userId, roleFilter)})`
 }
 
 const buildFollowCondition = (userId: string, roleFilter: string | null) => {
-  if (roleFilter) {
-    return sql`(
-      SELECT COUNT(*) FROM follow_requests
-      WHERE status = 'accepted'
-        AND role = ${roleFilter}
-        AND (
-          (from_user_id = ${userId} AND to_user_id = r.user_id) OR
-          (to_user_id = ${userId} AND from_user_id = r.user_id)
-        )
-    ) > 0`
-  }
-  return sql`(
-    SELECT COUNT(*) FROM follow_requests
+  const roleCond = roleFilter ? sql`AND role = ${roleFilter}` : sql``
+  return sql`EXISTS (
+    SELECT 1 FROM follow_requests
     WHERE status = 'accepted'
+      ${roleCond}
       AND (
         (from_user_id = ${userId} AND to_user_id = r.user_id) OR
         (to_user_id = ${userId} AND from_user_id = r.user_id)
       )
-  ) > 0`
+  )`
 }
 
 reviews.get('/', async (c) => {
@@ -99,6 +90,70 @@ reviews.get('/map', async (c) => {
     GROUP BY rs.id, rs.name, rs.lat, rs.lng, rs.genre
   `
   return c.json(rows)
+})
+
+const fetchVisibleGenres = async (userId: string): Promise<string[]> => {
+  const rows = await sql`
+    SELECT DISTINCT rs.genre
+    FROM reviews r
+    JOIN restaurants rs ON rs.id = r.restaurant_id
+    WHERE rs.genre IS NOT NULL
+      AND (r.user_id = ${userId} OR ${buildFollowCondition(userId, null)})
+  `
+  return rows.map((row) => row.genre as string)
+}
+
+// フィード用：店舗単位でグルーピングし、最新レビュー日時のkeysetカーソルでページングする
+reviews.get('/feed', async (c) => {
+  const userId = c.get('userId')
+  const roleFilter = c.req.query('role') ?? null
+  const situationFilter = c.req.query('situation') ?? null
+  const genresParam = c.req.query('genres') ?? null
+  const cursor = c.req.query('cursor') ?? null
+  const limit = Math.min(Number(c.req.query('limit') ?? 20) || 20, 50)
+
+  const followCond = buildFollowCondition(userId, roleFilter)
+  const situationWhere = situationFilter ? sql`AND r.situation = ${situationFilter}` : sql``
+  const genreWhere = genresParam ? sql`AND rs.genre = ANY(${genresParam.split(',')})` : sql``
+  const cursorHaving = cursor ? sql`HAVING MAX(r.created_at) < ${cursor}` : sql``
+
+  const rows = await sql`
+    SELECT
+      rs.id AS restaurant_id,
+      rs.name AS restaurant_name,
+      rs.genre,
+      rs.lat,
+      rs.lng,
+      MAX(r.created_at) AS latest_review_at,
+      json_agg(json_build_object(
+        'id', r.id,
+        'user_id', r.user_id,
+        'restaurant_id', r.restaurant_id,
+        'rating', r.rating,
+        'situation', r.situation,
+        'comment', r.comment,
+        'visited_at', r.visited_at,
+        'photo_urls', r.photo_urls,
+        'display_name', p.display_name
+      ) ORDER BY r.created_at DESC) AS reviews
+    FROM reviews r
+    JOIN profiles p ON p.id = r.user_id
+    JOIN restaurants rs ON rs.id = r.restaurant_id
+    WHERE (r.user_id = ${userId} OR ${followCond})
+    ${situationWhere}
+    ${genreWhere}
+    GROUP BY rs.id, rs.name, rs.genre, rs.lat, rs.lng
+    ${cursorHaving}
+    ORDER BY latest_review_at DESC
+    LIMIT ${limit + 1}
+  `
+
+  const hasMore = rows.length > limit
+  const restaurants = hasMore ? rows.slice(0, limit) : rows
+  // ジャンル一覧は全ページ共通なので初回（カーソルなし）のみ返す
+  const genres = cursor ? null : await fetchVisibleGenres(userId)
+
+  return c.json({ restaurants, hasMore, genres })
 })
 
 reviews.post('/', async (c) => {

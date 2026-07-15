@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import {
   Box, Typography, CircularProgress, Chip, Divider,
   Card, CardActionArea, CardContent, CardActions, Drawer, IconButton, Button,
@@ -11,19 +11,16 @@ import SendIcon from '@mui/icons-material/Send'
 import DeleteOutlineIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import { supabase } from '../supabase'
-import { ROLES, SITUATIONS, normalizeGenre } from '../constants'
+import { ROLES, SITUATIONS, normalizeGenre, genreToRawValues } from '../constants'
 import WannaGoRequestDialog from '../components/WannaGoRequestDialog'
 import ReviewEditDialog from '../components/ReviewEditDialog'
+import type { EditableReview } from '../components/ReviewEditDialog'
 
 type Review = {
   id: string
   user_id: string
   restaurant_id: string
   display_name: string
-  restaurant_name: string
-  genre: string | null
-  lat: number | string | null
-  lng: number | string | null
   rating: 'want_to_revisit' | 'average' | 'not_good'
   situation?: string
   comment?: string
@@ -35,9 +32,16 @@ type RestaurantGroup = {
   restaurant_id: string
   restaurant_name: string
   genre: string | null
-  lat: number | null
-  lng: number | null
+  lat: number | string | null
+  lng: number | string | null
+  latest_review_at: string
   reviews: Review[]
+}
+
+type FeedResponse = {
+  restaurants: RestaurantGroup[]
+  hasMore: boolean
+  genres: string[] | null
 }
 
 type WannaGoItem = {
@@ -58,6 +62,11 @@ const RATING_LABEL: Record<Review['rating'], { text: string; color: 'success' | 
 
 const apiBase = import.meta.env.VITE_API_BASE_URL as string
 
+function normalizeGroups(restaurants: RestaurantGroup[] | undefined): RestaurantGroup[] {
+  if (!Array.isArray(restaurants)) return []
+  return restaurants.map((g) => ({ ...g, genre: normalizeGenre(g.genre) }))
+}
+
 async function getToken(): Promise<string> {
   const { data } = await supabase.auth.getSession()
   return data.session?.access_token ?? ''
@@ -65,7 +74,10 @@ async function getToken(): Promise<string> {
 
 export default function FeedPage() {
   const [activeTab, setActiveTab] = useState<0 | 1>(0)
-  const [reviews, setReviews] = useState<Review[]>([])
+  const [groups, setGroups] = useState<RestaurantGroup[]>([])
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [rawGenres, setRawGenres] = useState<string[]>([])
   const [wannaGoList, setWannaGoList] = useState<WannaGoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [roleFilter, setRoleFilter] = useState<string | null>(null)
@@ -76,20 +88,50 @@ export default function FeedPage() {
   const [inviteTarget, setInviteTarget] = useState<{ restaurantId: string; restaurantName: string } | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null)
-  const [editTarget, setEditTarget] = useState<Review | null>(null)
+  const [editTarget, setEditTarget] = useState<EditableReview | null>(null)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-  const fetchReviews = useCallback(async () => {
-    setLoading(true)
-    const { data: { session } } = await supabase.auth.getSession()
+  const fetchFeedPage = useCallback(async (cursor: string | null): Promise<FeedResponse> => {
+    const token = await getToken()
     const params = new URLSearchParams()
     if (roleFilter) params.set('role', roleFilter)
     if (situationFilter) params.set('situation', situationFilter)
-    const res = await fetch(`${apiBase}/api/v1/reviews?${params}`, {
-      headers: { Authorization: `Bearer ${session?.access_token}` },
+    if (genreFilter) params.set('genres', genreToRawValues(genreFilter).join(','))
+    if (cursor) params.set('cursor', cursor)
+    const res = await fetch(`${apiBase}/api/v1/reviews/feed?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
     })
-    setReviews(await res.json())
+    return res.json()
+  }, [roleFilter, situationFilter, genreFilter])
+
+  const fetchReviews = useCallback(async () => {
+    setLoading(true)
+    const data = await fetchFeedPage(null)
+    setGroups(normalizeGroups(data.restaurants))
+    setHasMore(data.hasMore ?? false)
+    if (data.genres) setRawGenres(data.genres)
     setLoading(false)
-  }, [roleFilter, situationFilter])
+  }, [fetchFeedPage])
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loadingMore || loading || groups.length === 0) return
+    setLoadingMore(true)
+    const cursor = groups[groups.length - 1].latest_review_at
+    const data = await fetchFeedPage(cursor)
+    setGroups((prev) => [...prev, ...normalizeGroups(data.restaurants)])
+    setHasMore(data.hasMore ?? false)
+    setLoadingMore(false)
+  }, [hasMore, loadingMore, loading, groups, fetchFeedPage])
+
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) loadMore()
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [loadMore, activeTab, hasMore])
 
   const fetchWannaGo = useCallback(async () => {
     const token = await getToken()
@@ -119,35 +161,12 @@ export default function FeedPage() {
   const toggleFilter = (value: string, current: string | null, setter: (v: string | null) => void) =>
     setter(current === value ? null : value)
 
-  const restaurantGroups = useMemo<RestaurantGroup[]>(() => {
-    const map = new Map<string, RestaurantGroup>()
-    for (const r of reviews) {
-      if (!map.has(r.restaurant_id)) {
-        map.set(r.restaurant_id, {
-          restaurant_id: r.restaurant_id,
-          restaurant_name: r.restaurant_name,
-          genre: normalizeGenre(r.genre),
-          lat: r.lat != null ? Number(r.lat) : null,
-          lng: r.lng != null ? Number(r.lng) : null,
-          reviews: [],
-        })
-      }
-      map.get(r.restaurant_id)!.reviews.push(r)
-    }
-    return Array.from(map.values())
-  }, [reviews])
-
   const availableGenres = useMemo(() => {
-    const g = new Set(restaurantGroups.map((rg) => rg.genre).filter((g): g is string => Boolean(g)))
+    const g = new Set(rawGenres.map((raw) => normalizeGenre(raw)).filter((g): g is string => Boolean(g)))
     return Array.from(g).sort()
-  }, [restaurantGroups])
+  }, [rawGenres])
 
-  const filteredGroups = useMemo(
-    () => genreFilter ? restaurantGroups.filter((rg) => rg.genre === genreFilter) : restaurantGroups,
-    [restaurantGroups, genreFilter],
-  )
-
-  const selectedGroup = restaurantGroups.find((g) => g.restaurant_id === selectedId) ?? null
+  const selectedGroup = groups.find((g) => g.restaurant_id === selectedId) ?? null
 
   const removeWannaGo = async (restaurantId: string) => {
     const token = await getToken()
@@ -158,17 +177,18 @@ export default function FeedPage() {
     fetchWannaGo()
   }
 
-  const deleteReview = async (reviewId: string, restaurantId: string) => {
+  const deleteReview = async (reviewId: string) => {
     const token = await getToken()
     await fetch(`${apiBase}/api/v1/reviews/${reviewId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
-    await fetchReviews()
-    const remainingForRestaurant = reviews.filter(
-      (r) => r.restaurant_id === restaurantId && r.id !== reviewId,
+    // 再取得せずローカルで反映する。グループが空になればドロワーは自動で閉じる
+    setGroups((prev) =>
+      prev
+        .map((g) => ({ ...g, reviews: g.reviews.filter((r) => r.id !== reviewId) }))
+        .filter((g) => g.reviews.length > 0),
     )
-    if (remainingForRestaurant.length === 0) setSelectedId(null)
   }
 
   return (
@@ -222,11 +242,11 @@ export default function FeedPage() {
             <Divider sx={{ mb: 2 }} />
 
             {loading && <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>}
-            {!loading && filteredGroups.length === 0 && (
+            {!loading && groups.length === 0 && (
               <Typography color="text.secondary">レビューがまだありません</Typography>
             )}
 
-            {filteredGroups.map((group) => (
+            {!loading && groups.map((group) => (
               <Card key={group.restaurant_id} sx={{ mb: 1.5 }}>
                 <CardActionArea onClick={() => setSelectedId(group.restaurant_id)}>
                   <CardContent sx={{ pb: 1 }}>
@@ -258,6 +278,14 @@ export default function FeedPage() {
                 </CardActions>
               </Card>
             ))}
+
+            {/* 無限スクロール用の監視要素 */}
+            {!loading && hasMore && <Box ref={sentinelRef} sx={{ height: 4 }} />}
+            {loadingMore && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            )}
           </>
         )}
 
@@ -385,7 +413,7 @@ export default function FeedPage() {
                         <>
                           <IconButton
                             size="small"
-                            onClick={() => setEditTarget(rv)}
+                            onClick={() => setEditTarget({ ...rv, restaurant_name: selectedGroup.restaurant_name })}
                             sx={{ color: 'text.secondary' }}
                           >
                             <EditIcon fontSize="small" />
@@ -394,7 +422,7 @@ export default function FeedPage() {
                             size="small"
                             onClick={() => setConfirmDialog({
                               message: '投稿したレビューを削除しますか？',
-                              onConfirm: () => deleteReview(rv.id, rv.restaurant_id),
+                              onConfirm: () => deleteReview(rv.id),
                             })}
                             sx={{ color: 'text.secondary' }}
                           >
