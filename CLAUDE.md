@@ -89,6 +89,9 @@
 ## API設計について
 - [API.md](./API.md) を参照する
 
+## ユーザー情報の透明化について
+- [TRANSPARENCY.md](./TRANSPARENCY.md) を参照する（透明化の要素分析・実装優先順位）
+
 ## Docker構成について
 - [DOCKER.md](./DOCKER.md) を参照する
 
