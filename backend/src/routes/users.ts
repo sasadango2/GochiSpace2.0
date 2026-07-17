@@ -91,6 +91,43 @@ users.put('/me/genres', async (c) => {
   return c.json(rows)
 })
 
+type RatingDistribution = { want_to_revisit: number; average: number; not_good: number }
+
+async function fetchReviewStats(userId: string) {
+  const [ratingRows, genreRows, situationRows, [activity]] = await Promise.all([
+    sql`SELECT rating, COUNT(*)::int AS count FROM reviews WHERE user_id = ${userId} GROUP BY rating`,
+    sql`
+      SELECT rs.genre, COUNT(*)::int AS count
+      FROM reviews r
+      JOIN restaurants rs ON rs.id = r.restaurant_id
+      WHERE r.user_id = ${userId} AND rs.genre IS NOT NULL
+      GROUP BY rs.genre
+      ORDER BY count DESC
+    `,
+    sql`
+      SELECT situation, COUNT(*)::int AS count FROM reviews
+      WHERE user_id = ${userId} AND situation IS NOT NULL
+      GROUP BY situation
+      ORDER BY count DESC
+    `,
+    sql`SELECT MAX(created_at) AS last_reviewed_at FROM reviews WHERE user_id = ${userId}`,
+  ])
+
+  const ratingDistribution: RatingDistribution = { want_to_revisit: 0, average: 0, not_good: 0 }
+  for (const row of ratingRows) {
+    ratingDistribution[row.rating as keyof RatingDistribution] = row.count as number
+  }
+  const reviewCount = ratingRows.reduce((sum, row) => sum + (row.count as number), 0)
+
+  return {
+    review_count: reviewCount,
+    rating_distribution: ratingDistribution,
+    genre_distribution: genreRows,
+    situation_distribution: situationRows,
+    last_reviewed_at: activity?.last_reviewed_at ?? null,
+  }
+}
+
 // 動的ルートは静的ルート（/me, /search 等）より後に定義する
 users.get('/:userId', async (c) => {
   const currentUserId = c.get('userId')
@@ -120,11 +157,9 @@ users.get('/:userId', async (c) => {
     JOIN genres g ON g.id = ugp.genre_id
     WHERE ugp.user_id = ${userId}
   `
-  const [{ count }] = await sql`
-    SELECT COUNT(*)::int AS count FROM reviews WHERE user_id = ${userId}
-  `
+  const stats = await fetchReviewStats(userId)
 
-  return c.json({ ...profile, genres, review_count: count })
+  return c.json({ ...profile, genres, ...stats })
 })
 
 export { users }

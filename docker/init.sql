@@ -51,6 +51,8 @@ CREATE TABLE reviews (
   restaurant_id UUID NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
   rating rating_type NOT NULL,
   comment TEXT,
+  situation VARCHAR(50),
+  photo_urls TEXT[],
   visited_at DATE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

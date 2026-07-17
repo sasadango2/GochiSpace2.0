@@ -90,6 +90,8 @@
 | `restaurant_id` | UUID | FK → restaurants, NOT NULL | |
 | `rating` | ENUM | NOT NULL | `want_to_revisit` / `average` / `not_good` |
 | `comment` | TEXT | | |
+| `situation` | VARCHAR(50) | | シチュエーション（デート / 家族の食事 など） |
+| `photo_urls` | TEXT[] | | レビュー写真URL（最大3枚） |
 | `visited_at` | DATE | | 訪問日 |
 | `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
 | `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | |
