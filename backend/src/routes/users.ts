@@ -34,12 +34,17 @@ users.post('/me', async (c) => {
 
 users.put('/me', async (c) => {
   const userId = c.get('userId')
-  const { username, display_name, avatar_url } = await c.req.json()
+  const { username, display_name, avatar_url, bio } = await c.req.json()
+  if (typeof bio === 'string' && bio.length > 200) {
+    return c.json({ error: { code: 'BAD_REQUEST', message: '自己紹介は200文字以内です' } }, 400)
+  }
+  // postgres.js は undefined パラメータを拒否するため null に正規化する
   const [updated] = await sql`
     UPDATE profiles SET
-      username = COALESCE(${username}, username),
-      display_name = COALESCE(${display_name}, display_name),
-      avatar_url = COALESCE(${avatar_url}, avatar_url),
+      username = COALESCE(${username ?? null}, username),
+      display_name = COALESCE(${display_name ?? null}, display_name),
+      avatar_url = COALESCE(${avatar_url ?? null}, avatar_url),
+      bio = COALESCE(${bio ?? null}, bio),
       updated_at = NOW()
     WHERE id = ${userId}
     RETURNING *
@@ -94,7 +99,7 @@ users.put('/me/genres', async (c) => {
 type RatingDistribution = { want_to_revisit: number; average: number; not_good: number }
 
 async function fetchReviewStats(userId: string) {
-  const [ratingRows, genreRows, situationRows, [activity]] = await Promise.all([
+  const [ratingRows, genreRows, situationRows, [activity], [revisit]] = await Promise.all([
     sql`SELECT rating, COUNT(*)::int AS count FROM reviews WHERE user_id = ${userId} GROUP BY rating`,
     sql`
       SELECT rs.genre, COUNT(*)::int AS count
@@ -111,6 +116,14 @@ async function fetchReviewStats(userId: string) {
       ORDER BY count DESC
     `,
     sql`SELECT MAX(created_at) AS last_reviewed_at FROM reviews WHERE user_id = ${userId}`,
+    sql`
+      SELECT COUNT(*)::int AS count FROM (
+        SELECT restaurant_id FROM reviews
+        WHERE user_id = ${userId}
+        GROUP BY restaurant_id
+        HAVING COUNT(*) >= 2
+      ) revisited
+    `,
   ])
 
   const ratingDistribution: RatingDistribution = { want_to_revisit: 0, average: 0, not_good: 0 }
@@ -125,6 +138,7 @@ async function fetchReviewStats(userId: string) {
     genre_distribution: genreRows,
     situation_distribution: situationRows,
     last_reviewed_at: activity?.last_reviewed_at ?? null,
+    revisited_count: revisit?.count ?? 0,
   }
 }
 
@@ -148,7 +162,7 @@ users.get('/:userId', async (c) => {
   }
 
   const [profile] = await sql`
-    SELECT id, username, display_name, avatar_url FROM profiles WHERE id = ${userId}
+    SELECT id, username, display_name, avatar_url, bio FROM profiles WHERE id = ${userId}
   `
   if (!profile) return c.json({ error: { code: 'NOT_FOUND', message: 'プロフィールが見つかりません' } }, 404)
 

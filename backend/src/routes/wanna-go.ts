@@ -13,7 +13,7 @@ wannaGo.get('/', async (c) => {
            rs.name AS restaurant_name, rs.genre, rs.lat, rs.lng, rs.address
     FROM wanna_go wg
     JOIN restaurants rs ON rs.id = wg.restaurant_id
-    WHERE wg.user_id = ${userId}
+    WHERE wg.user_id = ${userId} AND wg.visited_at IS NULL
     ORDER BY wg.created_at DESC
   `
   return c.json(rows)
@@ -28,6 +28,7 @@ wannaGo.get('/map', async (c) => {
     JOIN restaurants rs ON rs.id = wg.restaurant_id
     JOIN profiles p ON p.id = wg.user_id
     WHERE rs.lat IS NOT NULL AND rs.lng IS NOT NULL
+      AND wg.visited_at IS NULL
       AND (
         wg.user_id = ${userId}
         OR wg.user_id IN (
@@ -67,11 +68,19 @@ wannaGo.post('/', async (c) => {
     return c.json({ error: { code: 'ALREADY_REVIEWED', message: '行った店は行きたいリストに追加できません' } }, 400)
   }
 
-  await sql`
-    INSERT INTO wanna_go (user_id, restaurant_id)
-    VALUES (${userId}, ${restaurantId})
-    ON CONFLICT DO NOTHING
+  // レビュー削除後の再追加では訪問済み行が残っているため、復活させてから INSERT する
+  const revived = await sql`
+    UPDATE wanna_go SET visited_at = NULL, created_at = NOW()
+    WHERE user_id = ${userId} AND restaurant_id = ${restaurantId}
+    RETURNING restaurant_id
   `
+  if (revived.length === 0) {
+    await sql`
+      INSERT INTO wanna_go (user_id, restaurant_id)
+      VALUES (${userId}, ${restaurantId})
+      ON CONFLICT DO NOTHING
+    `
+  }
   return c.json({ ok: true }, 201)
 })
 

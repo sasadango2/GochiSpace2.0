@@ -6,6 +6,7 @@ CREATE TABLE profiles (
   username VARCHAR(50) UNIQUE NOT NULL,
   display_name VARCHAR(100) NOT NULL,
   avatar_url TEXT,
+  bio TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -28,6 +29,7 @@ CREATE TABLE follow_requests (
   from_user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   to_user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   status follow_status NOT NULL DEFAULT 'pending',
+  role VARCHAR(20),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(from_user_id, to_user_id)
@@ -54,6 +56,27 @@ CREATE TABLE reviews (
   situation VARCHAR(50),
   photo_urls TEXT[],
   visited_at DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 本番DBはダッシュボード経由で先行作成されたため、以下2テーブルはコードの使用箇所から復元した定義。
+-- 差異が疑われる場合は pg_dump --schema-only で本番を正として同期し直すこと
+CREATE TABLE wanna_go (
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  restaurant_id UUID NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  visited_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (user_id, restaurant_id)
+);
+
+CREATE TABLE wanna_go_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  from_user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  to_user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  restaurant_id UUID NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  message TEXT,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

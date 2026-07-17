@@ -23,6 +23,7 @@
 | `username` | VARCHAR(50) | UNIQUE NOT NULL | |
 | `display_name` | VARCHAR(100) | NOT NULL | |
 | `avatar_url` | TEXT | | |
+| `bio` | TEXT | | 自己紹介（200字上限はアプリ側で制御） |
 | `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
 | `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | |
 
@@ -58,6 +59,7 @@
 | `from_user_id` | UUID | FK → profiles, NOT NULL | 申請した側 |
 | `to_user_id` | UUID | FK → profiles, NOT NULL | 申請された側 |
 | `status` | ENUM | NOT NULL, DEFAULT 'pending' | `pending` / `accepted` / `rejected` |
+| `role` | VARCHAR(20) | | 相手との関係（家族 / 友達 など） |
 | `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
 | `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | |
 
@@ -93,6 +95,36 @@
 | `situation` | VARCHAR(50) | | シチュエーション（デート / 家族の食事 など） |
 | `photo_urls` | TEXT[] | | レビュー写真URL（最大3枚） |
 | `visited_at` | DATE | | 訪問日 |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+
+---
+
+### `wanna_go`
+
+※本番はダッシュボード経由で先行作成されたため、コードの使用箇所から復元した定義（差異が疑われる場合は `pg_dump --schema-only` で要確認）
+
+| カラム | 型 | 制約 | 備考 |
+|---|---|---|---|
+| `user_id` | UUID | PK(複合), FK → profiles | |
+| `restaurant_id` | UUID | PK(複合), FK → restaurants | |
+| `visited_at` | TIMESTAMPTZ | | レビュー投稿で訪問済み化（NULL＝未訪問。転換率の元データ） |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+
+---
+
+### `wanna_go_requests`
+
+※同上（コードからの復元定義）
+
+| カラム | 型 | 制約 | 備考 |
+|---|---|---|---|
+| `id` | UUID | PK | |
+| `from_user_id` | UUID | FK → profiles, NOT NULL | 誘った側 |
+| `to_user_id` | UUID | FK → profiles, NOT NULL | 誘われた側 |
+| `restaurant_id` | UUID | FK → restaurants, NOT NULL | |
+| `message` | TEXT | | |
+| `status` | VARCHAR(20) | NOT NULL, DEFAULT 'pending' | `pending` / `accepted` / `declined` |
 | `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
 | `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | |
 

@@ -170,6 +170,10 @@ export default function FeedPage() {
   }, [rawGenres])
 
   const selectedGroup = groups.find((g) => g.restaurant_id === selectedId) ?? null
+  const selectedReviewCountsByUser = (selectedGroup?.reviews ?? []).reduce((map, rv) => {
+    map.set(rv.user_id, (map.get(rv.user_id) ?? 0) + 1)
+    return map
+  }, new Map<string, number>())
 
   const removeWannaGo = async (restaurantId: string) => {
     const token = await getToken()
@@ -249,7 +253,10 @@ export default function FeedPage() {
               <Typography color="text.secondary">レビューがまだありません</Typography>
             )}
 
-            {!loading && groups.map((group) => (
+            {!loading && groups.map((group) => {
+              const myReview = group.reviews.find((rv) => rv.user_id === currentUserId)
+              const myRating = myReview ? RATING_LABEL[myReview.rating] : null
+              return (
               <Card key={group.restaurant_id} sx={{ mb: 1.5 }}>
                 <CardActionArea onClick={() => setSelectedId(group.restaurant_id)}>
                   <CardContent sx={{ pb: 1 }}>
@@ -262,7 +269,12 @@ export default function FeedPage() {
                           <Typography variant="caption" color="text.secondary">{group.genre}</Typography>
                         )}
                       </Box>
-                      <Chip label={`${group.reviews.length}件`} size="small" color="primary" variant="outlined" sx={{ flexShrink: 0 }} />
+                      <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        {myRating && (
+                          <Chip label={`あなた: ${myRating.text}`} size="small" color={myRating.color} />
+                        )}
+                        <Chip label={`${group.reviews.length}件`} size="small" color="primary" variant="outlined" />
+                      </Box>
                     </Box>
 
                   </CardContent>
@@ -280,7 +292,8 @@ export default function FeedPage() {
                   </Button>
                 </CardActions>
               </Card>
-            ))}
+              )
+            })}
 
             {/* 無限スクロール用の監視要素 */}
             {!loading && hasMore && <Box ref={sentinelRef} sx={{ height: 4 }} />}
@@ -423,6 +436,9 @@ export default function FeedPage() {
                       >
                         {rv.display_name}
                       </Typography>
+                      {(selectedReviewCountsByUser.get(rv.user_id) ?? 0) >= 2 && (
+                        <Chip label="再訪" size="small" variant="outlined" color="secondary" sx={{ flexShrink: 0 }} />
+                      )}
                       {rv.visited_at && (
                         <Typography variant="caption" color="text.secondary">
                           {rv.visited_at.slice(0, 10)}

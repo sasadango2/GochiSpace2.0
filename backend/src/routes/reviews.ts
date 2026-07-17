@@ -183,7 +183,11 @@ reviews.post('/', async (c) => {
     RETURNING *
   `
 
-  await sql`DELETE FROM wanna_go WHERE user_id = ${userId} AND restaurant_id = ${restaurantId}`
+  // 削除すると「行きたい→実行」の転換率が測れなくなるため、訪問済みマークで残す
+  await sql`
+    UPDATE wanna_go SET visited_at = NOW()
+    WHERE user_id = ${userId} AND restaurant_id = ${restaurantId} AND visited_at IS NULL
+  `
 
   return c.json(created, 201)
 })

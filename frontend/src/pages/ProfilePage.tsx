@@ -9,7 +9,7 @@ import { supabase } from '../supabase'
 import { uploadAvatar } from '../utils/uploadAvatar'
 
 type Genre = { id: number; name: string }
-type Profile = { username: string; display_name: string; avatar_url: string | null }
+type Profile = { username: string; display_name: string; avatar_url: string | null; bio: string | null }
 type Message = { text: string; severity: 'success' | 'error' }
 
 const apiBase = import.meta.env.VITE_API_BASE_URL as string
@@ -21,7 +21,7 @@ async function getToken() {
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const [profile, setProfile] = useState<Profile>({ username: '', display_name: '', avatar_url: null })
+  const [profile, setProfile] = useState<Profile>({ username: '', display_name: '', avatar_url: null, bio: null })
   const [genres, setGenres] = useState<Genre[]>([])
   const [selectedGenres, setSelectedGenres] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,7 +88,7 @@ export default function ProfilePage() {
     await fetch(`${apiBase}/api/v1/users/me`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ username: profile.username, display_name: profile.display_name }),
+      body: JSON.stringify({ username: profile.username, display_name: profile.display_name, bio: profile.bio ?? '' }),
     })
     await fetch(`${apiBase}/api/v1/users/me/genres`, {
       method: 'PUT',
@@ -142,6 +142,18 @@ export default function ProfilePage() {
         fullWidth
         value={profile.display_name}
         onChange={(e) => setProfile({ ...profile, display_name: e.target.value })}
+        sx={{ mb: 2 }}
+      />
+      <TextField
+        label="自己紹介"
+        placeholder="例：パクチー苦手。コスパ重視で居酒屋多め"
+        fullWidth
+        multiline
+        minRows={2}
+        value={profile.bio ?? ''}
+        onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+        slotProps={{ htmlInput: { maxLength: 200 } }}
+        helperText={`${(profile.bio ?? '').length}/200`}
         sx={{ mb: 3 }}
       />
       <Typography variant="subtitle1" sx={{ mb: 1 }}>好きなジャンル（最大3つ）</Typography>

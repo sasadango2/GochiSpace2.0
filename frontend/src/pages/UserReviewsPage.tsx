@@ -17,6 +17,8 @@ type UserProfile = {
   avatar_url: string | null
   genres: { id: number; name: string }[]
   review_count: number
+  bio?: string | null
+  revisited_count?: number
   rating_distribution?: RatingCounts
   genre_distribution?: { genre: string; count: number }[]
   situation_distribution?: { situation: string; count: number }[]
@@ -25,6 +27,7 @@ type UserProfile = {
 
 type UserReview = {
   id: string
+  restaurant_id: string
   restaurant_name: string
   genre: string | null
   rating: 'want_to_revisit' | 'average' | 'not_good'
@@ -141,6 +144,10 @@ export default function UserReviewsPage() {
 
   const genreStats = profile?.genre_distribution ? mergeGenreCounts(profile.genre_distribution) : []
   const situationStats = (profile?.situation_distribution ?? []).slice(0, 3)
+  const reviewCountsByRestaurant = reviews.reduce((map, rv) => {
+    map.set(rv.restaurant_id, (map.get(rv.restaurant_id) ?? 0) + 1)
+    return map
+  }, new Map<string, number>())
 
   return (
     <Box sx={{ height: '100%', overflow: 'auto' }}>
@@ -169,10 +176,16 @@ export default function UserReviewsPage() {
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     @{profile.username} ・ レビュー {profile.review_count}件
+                    {(profile.revisited_count ?? 0) > 0 && ` ・ 再訪した店 ${profile.revisited_count}軒`}
                     {profile.last_reviewed_at && ` ・ 最終レビュー ${formatRelativeTime(profile.last_reviewed_at)}`}
                   </Typography>
                 </Box>
               </Box>
+              {profile.bio && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, whiteSpace: 'pre-wrap' }}>
+                  {profile.bio}
+                </Typography>
+              )}
               {profile.genres.length > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5, flexWrap: 'wrap' }}>
                   <Typography variant="caption" color="text.secondary" sx={{ mr: 0.5 }}>
@@ -238,6 +251,9 @@ export default function UserReviewsPage() {
                 <Box sx={{ display: 'flex', gap: 0.5, mb: 0.75, flexWrap: 'wrap' }}>
                   <Chip label={info.text} color={info.color} size="small" />
                   {rv.situation && <Chip label={rv.situation} size="small" variant="outlined" />}
+                  {(reviewCountsByRestaurant.get(rv.restaurant_id) ?? 0) >= 2 && (
+                    <Chip label="再訪" size="small" variant="outlined" color="secondary" />
+                  )}
                 </Box>
                 {rv.comment && (
                   <Typography variant="body2" color="text.secondary">{rv.comment}</Typography>
