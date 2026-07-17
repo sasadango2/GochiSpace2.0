@@ -34,6 +34,11 @@ export default function NotificationPage() {
     })
     setNotifications(await res.json())
     setLoading(false)
+    // 開いた時点で既読化してからバッジを再取得させる
+    await fetch(`${API_BASE}/api/v1/notifications/read`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
     window.dispatchEvent(new CustomEvent('notifications-updated'))
   }, [])
 

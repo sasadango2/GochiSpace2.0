@@ -7,6 +7,7 @@ CREATE TABLE profiles (
   display_name VARCHAR(100) NOT NULL,
   avatar_url TEXT,
   bio TEXT,
+  notifications_read_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

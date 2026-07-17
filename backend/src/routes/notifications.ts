@@ -33,15 +33,26 @@ notifications.get('/', async (c) => {
   return c.json(all)
 })
 
+// 未読＝既読日時より後に届いた pending。対応待ち自体は一覧に残るが、バッジは開けば消える
 notifications.get('/unread-count', async (c) => {
   const userId = c.get('userId')
+  const [profile] = await sql`SELECT notifications_read_at FROM profiles WHERE id = ${userId}`
+  const readAt = profile?.notifications_read_at ?? new Date(0)
   const [{ count: fc }] = await sql`
-    SELECT COUNT(*) FROM follow_requests WHERE to_user_id = ${userId} AND status = 'pending'
+    SELECT COUNT(*) FROM follow_requests
+    WHERE to_user_id = ${userId} AND status = 'pending' AND created_at > ${readAt}
   `
   const [{ count: wc }] = await sql`
-    SELECT COUNT(*) FROM wanna_go_requests WHERE to_user_id = ${userId} AND status = 'pending'
+    SELECT COUNT(*) FROM wanna_go_requests
+    WHERE to_user_id = ${userId} AND status = 'pending' AND created_at > ${readAt}
   `
   return c.json({ count: Number(fc) + Number(wc) })
+})
+
+notifications.post('/read', async (c) => {
+  const userId = c.get('userId')
+  await sql`UPDATE profiles SET notifications_read_at = NOW() WHERE id = ${userId}`
+  return c.json({ ok: true })
 })
 
 export { notifications }

@@ -24,6 +24,7 @@
 | `display_name` | VARCHAR(100) | NOT NULL | |
 | `avatar_url` | TEXT | | |
 | `bio` | TEXT | | 自己紹介（200字上限はアプリ側で制御） |
+| `notifications_read_at` | TIMESTAMPTZ | | 通知ページを最後に開いた日時（未読バッジの基準） |
 | `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
 | `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | |
 
