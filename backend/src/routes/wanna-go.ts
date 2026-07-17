@@ -10,7 +10,7 @@ wannaGo.get('/', async (c) => {
   const userId = c.get('userId')
   const rows = await sql`
     SELECT wg.restaurant_id, wg.created_at,
-           rs.name AS restaurant_name, rs.genre, rs.lat, rs.lng, rs.address
+           rs.name AS restaurant_name, rs.genre, rs.lat, rs.lng, rs.address, rs.photo_url
     FROM wanna_go wg
     JOIN restaurants rs ON rs.id = wg.restaurant_id
     WHERE wg.user_id = ${userId} AND wg.visited_at IS NULL

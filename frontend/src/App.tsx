@@ -108,6 +108,13 @@ function Layout() {
     return () => window.removeEventListener('notifications-updated', fetchUnreadCount)
   }, [location.pathname])
 
+  // 空状態のCTA等、ページ側からグローバルの投稿ダイアログを開くための導線
+  useEffect(() => {
+    const openReviewDialog = () => setReviewDialogOpen(true)
+    window.addEventListener('open-review-dialog', openReviewDialog)
+    return () => window.removeEventListener('open-review-dialog', openReviewDialog)
+  }, [])
+
   return (
     <Box sx={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       {/* PC: サイドバー */}

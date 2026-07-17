@@ -126,6 +126,7 @@ reviews.get('/feed', async (c) => {
       rs.genre,
       rs.lat,
       rs.lng,
+      rs.photo_url,
       MAX(r.created_at) AS latest_review_at,
       json_agg(json_build_object(
         'id', r.id,
@@ -145,7 +146,7 @@ reviews.get('/feed', async (c) => {
     WHERE (r.user_id = ${userId} OR ${followCond})
     ${situationWhere}
     ${genreWhere}
-    GROUP BY rs.id, rs.name, rs.genre, rs.lat, rs.lng
+    GROUP BY rs.id, rs.name, rs.genre, rs.lat, rs.lng, rs.photo_url
     ${cursorHaving}
     ORDER BY latest_review_at DESC
     LIMIT ${limit + 1}
