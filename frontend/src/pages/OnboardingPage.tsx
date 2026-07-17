@@ -1,13 +1,119 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box, Button, Container, TextField, Typography, Alert, Chip,
   Stepper, Step, StepLabel, List, ListItem, ListItemText,
 } from '@mui/material'
+import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu'
+import Diversity3Icon from '@mui/icons-material/Diversity3'
+import MapIcon from '@mui/icons-material/Map'
+import InsightsIcon from '@mui/icons-material/Insights'
 import { supabase } from '../supabase'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
 const STEPS = ['プロフィール', '好み', '友達']
+
+const SLIDES = [
+  {
+    icon: <RestaurantMenuIcon sx={{ fontSize: 48 }} />,
+    title: 'GochiSpaceへようこそ',
+    body: '信頼できる人のレビューだけが集まる、飲食店レビューサービスです。匿名の口コミもサクラもありません。',
+  },
+  {
+    icon: <Diversity3Icon sx={{ fontSize: 48 }} />,
+    title: '相互フォローでつながる',
+    body: 'レビューを見られるのは、お互いにフォローし合った相手だけ。家族や友人との小さな輪の中で共有します。',
+  },
+  {
+    icon: <MapIcon sx={{ fontSize: 48 }} />,
+    title: 'マップで見つける',
+    body: '友達のレビューや行きたい店が地図に集まります。次のお店選びは、信頼できるおすすめから。',
+  },
+  {
+    icon: <InsightsIcon sx={{ fontSize: 48 }} />,
+    title: '好みがわかるから、選べる',
+    body: '評価の傾向やよく行くジャンルがプロフィールに表示されるので、その人の「また行きたい」がどれだけ当てになるかが分かります。',
+  },
+]
+
+function WalkthroughStep({ onNext }: { onNext: () => void }) {
+  const [index, setIndex] = useState(0)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+
+  const handleScroll = () => {
+    const el = scrollRef.current
+    if (!el) return
+    setIndex(Math.round(el.scrollLeft / el.clientWidth))
+  }
+
+  const scrollToSlide = (i: number) => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollTo({ left: el.clientWidth * i, behavior: 'smooth' })
+  }
+
+  const isLast = index === SLIDES.length - 1
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 4 }}>
+      <Box
+        ref={scrollRef}
+        onScroll={handleScroll}
+        sx={{
+          display: 'flex',
+          overflowX: 'auto',
+          scrollSnapType: 'x mandatory',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        }}
+      >
+        {SLIDES.map((slide) => (
+          <Box
+            key={slide.title}
+            sx={{ flex: '0 0 100%', scrollSnapAlign: 'start', textAlign: 'center', px: 2, py: 3 }}
+          >
+            <Box
+              sx={{
+                width: 104, height: 104, mx: 'auto', mb: 3, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'primary.main',
+                background: 'linear-gradient(180deg, #ffffff 0%, #fdf1e7 100%)',
+                boxShadow: '0 12px 28px rgba(33, 29, 25, 0.09), inset 0 1.5px 0 rgba(255, 255, 255, 0.9)',
+              }}
+            >
+              {slide.icon}
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, mb: 1.5 }}>{slide.title}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 320, mx: 'auto' }}>
+              {slide.body}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+        {SLIDES.map((slide, i) => (
+          <Box
+            key={slide.title}
+            onClick={() => scrollToSlide(i)}
+            sx={{
+              width: i === index ? 22 : 8, height: 8, borderRadius: 999,
+              bgcolor: i === index ? 'primary.main' : 'grey.300',
+              transition: 'all 0.2s ease', cursor: 'pointer',
+            }}
+          />
+        ))}
+      </Box>
+      <Button
+        variant="contained"
+        size="large"
+        onClick={() => (isLast ? onNext() : scrollToSlide(index + 1))}
+      >
+        {isLast ? 'はじめる' : '次へ'}
+      </Button>
+      {!isLast && <Button color="inherit" onClick={onNext}>スキップ</Button>}
+    </Box>
+  )
+}
 
 type Genre = { id: number; name: string }
 type SearchUser = { id: string; username: string; display_name: string }
@@ -205,6 +311,7 @@ function FollowStep({ onFinish }: { onFinish: () => void }) {
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
+  // 0 = ウォークスルー（サービス紹介）、1〜3 = 設定ステップ
   const [activeStep, setActiveStep] = useState(0)
 
   const goNext = () => setActiveStep((prev) => prev + 1)
@@ -213,16 +320,19 @@ export default function OnboardingPage() {
   return (
     <Container maxWidth="sm">
       <Box sx={{ mt: 4, mb: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <Stepper activeStep={activeStep} alternativeLabel>
-          {STEPS.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-        {activeStep === 0 && <ProfileStep onNext={goNext} />}
-        {activeStep === 1 && <GenresStep onNext={goNext} />}
-        {activeStep === 2 && <FollowStep onFinish={finish} />}
+        {activeStep > 0 && (
+          <Stepper activeStep={activeStep - 1} alternativeLabel>
+            {STEPS.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        )}
+        {activeStep === 0 && <WalkthroughStep onNext={goNext} />}
+        {activeStep === 1 && <ProfileStep onNext={goNext} />}
+        {activeStep === 2 && <GenresStep onNext={goNext} />}
+        {activeStep === 3 && <FollowStep onFinish={finish} />}
       </Box>
     </Container>
   )
