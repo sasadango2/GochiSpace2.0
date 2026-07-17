@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import {
-  Box, Typography, Chip, Divider, Drawer, IconButton, Badge, Paper,
+  Box, Typography, Chip, Divider, Drawer, IconButton, Badge, Paper, Avatar,
   FormControl, InputLabel, Select, MenuItem, Switch, FormControlLabel,
   Button, Modal,
 } from '@mui/material'
@@ -22,6 +22,7 @@ type ReviewSummary = {
   situation: string | null
   comment: string | null
   display_name: string
+  avatar_url?: string | null
   visited_at: string | null
   photo_urls: string[] | null
 }
@@ -194,6 +195,13 @@ function RestaurantMarker({ rs, onInvite, onImageClick }: RestaurantMarkerProps)
                 <Box key={rv.id}>
                   {i > 0 && <Divider sx={{ my: 0.5 }} />}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, py: 0.25 }}>
+                    <Avatar
+                      src={rv.avatar_url ?? undefined}
+                      onClick={() => { if (rv.user_id) navigate(`/follows/${rv.user_id}`, { state: { displayName: rv.display_name } }) }}
+                      sx={{ width: 20, height: 20, fontSize: 10, cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      {rv.display_name.charAt(0)}
+                    </Avatar>
                     <Typography
                       variant="caption"
                       onClick={() => { if (rv.user_id) navigate(`/follows/${rv.user_id}`, { state: { displayName: rv.display_name } }) }}

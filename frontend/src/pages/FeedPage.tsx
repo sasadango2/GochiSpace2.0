@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Box, Typography, CircularProgress, Chip, Divider,
+  Box, Typography, CircularProgress, Chip, Divider, Avatar,
   Card, CardActionArea, CardContent, CardActions, Drawer, IconButton, Button,
   Tabs, Tab, Modal,
   Dialog, DialogContent, DialogContentText, DialogActions,
@@ -22,6 +22,7 @@ type Review = {
   user_id: string
   restaurant_id: string
   display_name: string
+  avatar_url?: string | null
   rating: 'want_to_revisit' | 'average' | 'not_good'
   situation?: string
   comment?: string
@@ -405,6 +406,13 @@ export default function FeedPage() {
                   {i > 0 && <Divider />}
                   <Box sx={{ px: 2, py: 1.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <Avatar
+                        src={rv.avatar_url ?? undefined}
+                        onClick={() => { if (rv.user_id) navigate(`/follows/${rv.user_id}`, { state: { displayName: rv.display_name } }) }}
+                        sx={{ width: 26, height: 26, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}
+                      >
+                        {rv.display_name.charAt(0)}
+                      </Avatar>
                       <Typography
                         variant="body2"
                         onClick={() => { if (rv.user_id) navigate(`/follows/${rv.user_id}`, { state: { displayName: rv.display_name } }) }}

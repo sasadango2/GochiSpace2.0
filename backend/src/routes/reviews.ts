@@ -79,6 +79,7 @@ reviews.get('/map', async (c) => {
         'situation', r.situation,
         'comment', r.comment,
         'display_name', p.display_name,
+        'avatar_url', p.avatar_url,
         'visited_at', r.visited_at,
         'photo_urls', r.photo_urls
       ) ORDER BY r.created_at DESC) AS reviews
@@ -135,7 +136,8 @@ reviews.get('/feed', async (c) => {
         'comment', r.comment,
         'visited_at', r.visited_at,
         'photo_urls', r.photo_urls,
-        'display_name', p.display_name
+        'display_name', p.display_name,
+        'avatar_url', p.avatar_url
       ) ORDER BY r.created_at DESC) AS reviews
     FROM reviews r
     JOIN profiles p ON p.id = r.user_id
